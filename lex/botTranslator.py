@@ -4,6 +4,7 @@
 import json
 import boto3
 import random
+import logging
 
 BOT_NAME = "OrderFlowers"
 BOT_ALIAS = "LATEST"
@@ -15,10 +16,12 @@ def translateBot(local_message, userid):
 	print("translating local_message: " + local_message)
 	comprehend = boto3.client(service_name='comprehend', region_name='us-east-1')
 	language = comprehend.detect_dominant_language(Text=local_message)["Languages"][0]["LanguageCode"]
+	
 	translate = boto3.client(service_name='translate', region_name='us-east-1')
 	translated_message = translate.translate_text(Text=local_message, SourceLanguageCode=language, TargetLanguageCode="en")
 	lex = boto3.client(service_name='lex-runtime', region_name='us-east-1')
 	en_response = lex.post_text(botName=BOT_NAME, botAlias=BOT_ALIAS, userId=userid, inputText=translated_message['TranslatedText'])
+
 	# check presence of "message" field to see if there is a dialog or if its the final confirmation. 
 	if "message" in en_response:
 		en_response = en_response.get("message")
@@ -42,33 +45,6 @@ def lambda_handler(event, context):
         "body": botResponse
     }
 
-def run_test():
-	userid = "user" + str(random.randint(1,9999)).zfill(4)
-
-	local_message = "我想订花"	
-	botResponse = translateBot(local_message=local_message, userid=userid)
-	print(json.dumps(botResponse, ensure_ascii=False, encoding="UTF8"))
-	assert botResponse["en_response"] == "What type of flowers would you like to order?"
-
-	local_message = "玫瑰花"
-	botResponse = translateBot(local_message=local_message, userid=userid)
-	print(json.dumps(botResponse, ensure_ascii=False, encoding="UTF8"))
-	assert "What day do you want" in botResponse["en_response"] 
-
-	local_message = "星期五"
-	botResponse = translateBot(local_message=local_message, userid=userid)
-	print(json.dumps(botResponse, ensure_ascii=False, encoding="UTF8"))
-	assert "what time" in botResponse["en_response"] 
-
-	local_message = "早晨九点"
-	botResponse = translateBot(local_message=local_message, userid=userid)
-	print(json.dumps(botResponse, ensure_ascii=False, encoding="UTF8"))
-	assert "Does this sound okay" in botResponse["en_response"]
-
-	local_message = "好的"
-	botResponse = translateBot(local_message=local_message, userid=userid)
-	print(json.dumps(botResponse, ensure_ascii=False, encoding="UTF8"))
-	assert botResponse["confirmation"]["slots"]["FlowerType"] == "Rose"
-
 if __name__ == '__main__':
-	run_test()
+	pass
+
