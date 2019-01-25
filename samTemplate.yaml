@@ -14,4 +14,4 @@ Resources:
           Type: Api
           Properties:
             Path: /MultilanguageBot
-            Method: GET
+            Method: POST
