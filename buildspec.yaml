@@ -1,0 +1,10 @@
+version: 0.2
+phases:
+  install:
+    commands:
+      - aws cloudformation package --template-file samTemplate.yaml --s3-bucket codepipeline-sandbox01-iad 
+                                   --output-template-file outputSamTemplate.yaml
+artifacts:
+  type: zip
+  files:
+    - outputSamTemplate.yaml

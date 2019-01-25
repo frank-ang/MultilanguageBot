@@ -1,0 +1,17 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Multilanguage Bot
+Resources:
+  TimeFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: MultilanguageBot
+      Handler: lex/botTranslator.lambda_handler
+      Runtime: python3.6
+      CodeUri: ./
+      Events:
+        MyTimeApi:
+          Type: Api
+          Properties:
+            Path: /MultilanguageBot
+            Method: GET
