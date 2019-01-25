@@ -42,12 +42,18 @@ def translateBot(local_message, userid):
 		}
 
 def lambda_handler(event, context):
-    logger.info('got event{}'.format(event))
-    botResponse = translateBot(event["intent"], event["userid"])
+    logger.info('got event body: {}'.format(event["body"]))
+    body = json.loads(event["body"])
+    logger.info('parsed event body: {}'.format(json.dumps(body)))
+    botResponse = translateBot(body["intent"], body["userid"])
+    logger.info("bot response: {}".format(botResponse))
+
     return {
+        "isBase64Encoded": "false",
         "statusCode": 200,
-        "body": botResponse
+        "body": json.dumps(botResponse, ensure_ascii=False)
     }
+
 
 if __name__ == '__main__':
 	pass
