@@ -2,7 +2,7 @@ AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: Multilanguage Bot
 Resources:
-  TimeFunction:
+  MultilanguageBotFunction:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: MultilanguageBot
@@ -15,3 +15,10 @@ Resources:
           Properties:
             Path: /MultilanguageBot
             Method: POST
+      Policies:
+       - AWSLambdaExecute # Managed Policy
+       - AmazonLexReadOnly # Managed Policy
+       - ComprehendReadOnly # Managed Policy
+       - AmazonLexRunBotsOnly # Managed Policy
+       - TranslateReadOnly # Managed Policy
+

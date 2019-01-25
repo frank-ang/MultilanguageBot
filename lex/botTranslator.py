@@ -9,11 +9,14 @@ import logging
 BOT_NAME = "OrderFlowers"
 BOT_ALIAS = "LATEST"
 
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+
 def translateBot(local_message, userid):
 	"""
 	Calls the Lex bot, with bidirectional translation to/from the language of the message. 
 	"""
-	print("translating local_message: " + local_message)
+	logger.info("translating local_message: " + local_message)
 	comprehend = boto3.client(service_name='comprehend', region_name='us-east-1')
 	language = comprehend.detect_dominant_language(Text=local_message)["Languages"][0]["LanguageCode"]
 	
@@ -39,7 +42,8 @@ def translateBot(local_message, userid):
 		}
 
 def lambda_handler(event, context):
-    botResponse = translateBot( intent=event["intent"], userid=event["userid"] )
+    logger.info('got event{}'.format(event))
+    botResponse = translateBot(event["intent"], event["userid"])
     return {
         "statusCode": 200,
         "body": botResponse
