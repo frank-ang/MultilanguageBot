@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>BotUI - Hello World</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/botui/build/botui.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/botui/build/botui-theme-default.css" />
+  </head>
+  <body>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+	<script src="https://sdk.amazonaws.com/js/aws-sdk-2.283.1.min.js"></script>
+    <script src="js/aws-cognito-sdk.min.js"></script>
+    <script src="js/amazon-cognito-auth.min.js"></script> 
+    <script src="js/amazon-cognito-identity.min.js"></script>
+	<script src="js/config.js">// Externalized configuration parameters </script>
+    <script src="js/app-auth-cognito.js">// Authenticate to Cognito </script>
+
+    <script src="https://cdn.jsdelivr.net/vue/latest/vue.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/botui/build/botui.js"></script>
+    <div class="botui-app-container" id="flowers-bot">
+      <bot-ui></bot-ui>
+    </div>
+    <script src="js/flowers-bot.js">// Flowers Bot </script>
+
+  </body>
+</html>
+
+        
