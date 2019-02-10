@@ -1,9 +1,19 @@
 version: 0.2
+
+env:
+  variables:
+    CFN_ARTIFACT_BUCKET: "codepipeline-sandbox01-iad"
+    BOTUI_BUCKET: "www.sandbox01.demolab.host"
+
 phases:
   install:
     commands:
-      - aws cloudformation package --template-file samTemplate.yaml --s3-bucket codepipeline-sandbox01-iad 
+      # generate the SAM Template
+      - aws cloudformation package --template-file samTemplate.yaml --s3-bucket $CFN_ARTIFACT_BUCKET
                                    --output-template-file outputSamTemplate.yaml
+      # deploy the Bot UI web page 
+      # though for prod deployments, Webpage should deploy after the service itself. 
+      - aws s3 sync --acl public-read --delete ./botui/ s3://$BOTUI_BUCKET/botui/
 artifacts:
   type: zip
   files:

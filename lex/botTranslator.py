@@ -51,10 +51,14 @@ def lambda_handler(event, context):
     return {
         "isBase64Encoded": "false",
         "statusCode": 200,
-        "body": json.dumps(botResponse, ensure_ascii=False)
+        "body": json.dumps(botResponse, ensure_ascii=False),
+        "headers": {
+           'Content-Type': 'application/json', 
+           'Access-Control-Allow-Origin': '*',
+           'Access-Control-Allow-Methods': 'POST, OPTIONS',
+           'Access-Control-Allow-Headers': 'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'
+        }
     }
-
 
 if __name__ == '__main__':
 	pass
-

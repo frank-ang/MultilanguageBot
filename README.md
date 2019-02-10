@@ -11,6 +11,10 @@ Combine Amazon Translate, Comprehend and Lex to build a Chat Bot that supports m
 2. Create a BotTranslator Lambda function with the code provided, with IAM permissions for Comprehend, Translate, and Lex. 
 3. Start testing!
 
+## API CORS
+Enabling CORS is (currently) manually configured, 
+TODO: automate enabling CORS on Lambda and API Gateway in CFN. 
+
 ## Interface
 
 * Request format:
