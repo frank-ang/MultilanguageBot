@@ -2,9 +2,10 @@ version: 0.2
 
 env:
   variables:
+    # Adjust these to your environment.
     CFN_ARTIFACT_BUCKET: "codepipeline-sandbox01-iad"
     BOTUI_BUCKET_NAME: "www.sandbox01.demolab.host"
-    BOTUI_S3_URL: "s3://www.sandbox01.demolab.host/botui/"
+    # BOTUI_S3_URL: "s3://www.sandbox01.demolab.host/botui/"
 
 phases:
   install:
@@ -14,7 +15,8 @@ phases:
                                    --output-template-file outputSamTemplate.yaml
       # deploy the Bot UI web page 
       # though for prod deployments, Webpage should deploy after the service itself. 
-      - aws s3 sync --acl public-read --delete ./botui/ ${BOTUI_S3_URL}
+      - aws s3 sync --acl public-read --delete ./botui/ s3://${BOTUI_BUCKET_NAME}/botui/
+      - aws s3 put --acl public-read ./botui/favicon.ico s3://${BOTUI_BUCKET_NAME}/favicon.ico
 artifacts:
   type: zip
   files:

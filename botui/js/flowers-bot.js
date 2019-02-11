@@ -41,7 +41,7 @@ async function chat() {
 					// TODO... should translate the confirmation, too.
 					_botUi.message.bot({
 						type: "html",
-						content: "Nice! " + username + ", Your order has been confirmed:" 
+						content: "<hr/>🌷 Thank you! 🌷<br/>" + username + ", Your order has been confirmed:" 
 						      + "<ul>"
 						      + " <li>Flower Type: <b>" + response_data.confirmation.slots.FlowerType + "</b></li>"
 						      + " <li>Pickup Date: <b>" + response_data.confirmation.slots.PickupDate + "</b></li>"
