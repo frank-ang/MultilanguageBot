@@ -14,7 +14,7 @@ phases:
       - aws cloudformation package --template-file samTemplate.yaml --s3-bucket ${CFN_ARTIFACT_BUCKET}
                                    --output-template-file outputSamTemplate.yaml
       # deploy the Bot UI web page 
-      # though for prod deployments, Webpage should deploy after the service itself. 
+      # TODO it would be more sensible to first update the service itself, followed by this UI. 
       - aws s3 sync --acl public-read --delete ./botui/ s3://${BOTUI_BUCKET_NAME}/botui/
       - aws s3 put --acl public-read ./botui/favicon.ico s3://${BOTUI_BUCKET_NAME}/favicon.ico
 artifacts:

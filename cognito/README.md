@@ -13,7 +13,7 @@ DESIRED_PASSWORD=
 BOT_URL=
 ```
 
-### To Sign Up new users:
+### Sign Up new users:
 ```
 aws cognito-idp sign-up --client-id $APP_CLIENT_ID \
  --username $USERNAME --password $DESIRED_PASSWORD \
@@ -24,7 +24,7 @@ aws cognito-idp admin-confirm-sign-up \
   --username $USERNAME
 ```
 
-### To Confirm user accounts in FORCE_CHANGE_PASSWORD state, e.g. created from AWS Console.
+#### Confirm user accounts in FORCE_CHANGE_PASSWORD state, e.g. created from AWS Console.
 ```
 # initiate auth on behalf of the user, get the session key
 
@@ -36,7 +36,7 @@ SESSION_KEY=`aws cognito-idp admin-initiate-auth --user-pool-id $USER_POOL_ID --
 
 aws cognito-idp admin-respond-to-auth-challenge --user-pool-id $USER_POOL_ID --client-id $APP_CLIENT_ID --challenge-name NEW_PASSWORD_REQUIRED --challenge-responses NEW_PASSWORD=$DESIRED_PASSWORD,USERNAME=$USERNAME,userAttributes.name=$USERNAME --session $SESSION_KEY
 ```
-### To authenticate as user:
+### Authenticate as user:
 
 ```
 # response format is JWT Bearer token. 
@@ -46,12 +46,13 @@ aws cognito-idp initiate-auth --client-id $APP_CLIENT_ID --auth-flow USER_PASSWO
 OAUTH_ID_TOKEN=`aws cognito-idp initiate-auth --client-id $APP_CLIENT_ID --auth-flow USER_PASSWORD_AUTH --auth-parameters USERNAME=$USERNAME,PASSWORD=$DESIRED_PASSWORD | jq -r ".AuthenticationResult.IdToken"`
 ```
 
-#### AUTH against APIGW...
-Call API methods that are configured with a user pool authorizer, and supply the unexpired token in the Authorization header or another header of your choosing.
-https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-invoke-api-integrated-with-cognito-user-pool.html
-
 #### POST to flowers bot endpoint:
+
+Note use of Authorization header
+
+```
 curl -X POST -H "content-type: application/json" -H "Authorization: $OAUTH_ID_TOKEN"  --data '{ "intent":"我想订花", "userid":"bar"}' $BOT_URL; echo
+```
 
 ### Misc Cognito commands. messing around.
 ```
