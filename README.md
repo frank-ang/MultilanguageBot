@@ -6,16 +6,42 @@ Customers would like multi-language support in ChatBots, especially local langua
 ## Build Synopsis
 Combine Amazon Translate, Comprehend and Lex to build a Chat Bot that supports multi-languages.
 
-## Setup steps.
+## Setup Resources
+
+### COGNITO STACK
+Identity systems are shared across apps, so an existing Cognito setup can be used, or optionally, created using a new stack.
+
+#### Cognito (Stack)
+ * create stack
+ * create user
+
+### BOT STACK
+
+#### Lex Bot: 
+ * create "OrderFlowers" default example
+--> CAUTION: Not sure if need to customize missing "I want to order flowers"
+
+### WEB STACK
+
+#### Cloudfrontn Distribution
+
+#### Lambda MultilanguageBot APIGW (Stack)
 1. Create the default OrderFlowers example Lex bot. 
 2. Create a BotTranslator Lambda function with the code provided, with IAM permissions for Comprehend, Translate, and Lex. 
 3. Start testing!
+
+#### Pipeline
+
+
+
 
 ## API CORS
 Enabling CORS is (currently) manually configured, 
 TODO: automate enabling CORS on Lambda and API Gateway in CFN. 
 
-## Interface
+
+
+###  Interface Notes
 
 * Request format:
 ```
