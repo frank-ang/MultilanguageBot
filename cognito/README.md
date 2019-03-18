@@ -61,3 +61,8 @@ aws cognito-idp describe-user-pool-client \
 --client-id $APP_CLIENT_ID
 ```
 
+
+### MISC
+
+ TODO: test whether need to add missing "I want to order flowers"
+

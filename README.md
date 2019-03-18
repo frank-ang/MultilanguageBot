@@ -1,49 +1,57 @@
-# Get your Chat Bot to support multi-languages
+# Multilanguage Chatbot
 
-## Customer Challenge
-Customers would like multi-language support in ChatBots, especially local languages in the local regions (Malay, Chinese, Thai). However, Lex currently supports only English.
+The Multilanguage Lex Bot example demonstrates a pattern to enable AWS customers to configure multilanguage conversational bot experiences across all 21 languages, overcoming the current US English monolingual limitationof Amazon Lex. 
 
-## Build Synopsis
-Combine Amazon Translate, Comprehend and Lex to build a Chat Bot that supports multi-languages.
+The solution deploys a tranlation layer in front of the example Order Flowers Amazon Lex bot. This simple pattern provides a way for Amazon Lex bots to converse in all 21 languages supported by Amazon Translate. 
 
-## Setup Resources
+## Design
 
-### COGNITO STACK
+![Multilanguage Chatbot architecture](doc/architecture.jpeg) 
+
+The environment is defined in a SAM template: [MultilanguageBot.yaml](). 
+
+### User Experience
+
+A sample [BotUI](https://botui.org/) user interface is provided. The following illustrates the bot contextually switching between 2 different languages in response to user input. In this example, the front-end switches between Chinese (Simplified) and Bahasa Indonesia, mediating with the Lex back-end which remains limited to US English. To users, the bot appears multilingual.
+
+![Mixing Chinese and Indonesian in session](doc/botui-session.png) 
+
+### CORS
+
+The CORS ("Cross-origin resource sharing") browser security restriction arises from the fact that the S3 website endpoint and API Gateway endpoint have different DNS domain names.
+
+To get around this, and to avoid fiddling with configuring CORS on API Gateway and Lambda, the approach used in this solution utilizes a common CloudFront distribution in front of both the S3 website and the API Gateway endpoint. 
+
+## Installation
+
+#### 1. Create a Lex Bot: 
+ * Create the default "OrderFlowers" example using a blueprint. [https://docs.aws.amazon.com/lex/latest/dg/gs-bp-create-bot.html]()
+
+### 2. Cognito Stack
 Identity systems are shared across apps, so an existing Cognito setup can be used, or optionally, created using a new stack.
 
-#### Cognito (Stack)
- * create stack
- * create user
+Steps:
 
-### BOT STACK
+* create Cognito stack [cognito/cognito-cfn.yaml]()
+* create Cognito user [cognito/README.md]()
 
-#### Lex Bot: 
- * create "OrderFlowers" default example
---> CAUTION: Not sure if need to customize missing "I want to order flowers"
+### 3. Multilanguage Function Stack
 
-### WEB STACK
+Launch the CloudFormation/SAM template: [MultilanguageBot.yaml](). 
 
-#### Cloudfrontn Distribution
+This creates a BotTranslator Lambda function and API Gateway endpoint. IAM permissions are setup to permit calls to Comprehend, Translate, and Lex. 
 
-#### Lambda MultilanguageBot APIGW (Stack)
-1. Create the default OrderFlowers example Lex bot. 
-2. Create a BotTranslator Lambda function with the code provided, with IAM permissions for Comprehend, Translate, and Lex. 
-3. Start testing!
+### 4. Web stack
 
-#### Pipeline
+This is the S3 website hosting the botui.js web client, with AuthN via Cognito. Upload of new S3 content performed by CodePipeline + CodeBuild.
 
+Access the webpage from CloudFront.
 
+TODO: add more details and create the child CFN stacks.
 
+## API Testing
 
-## API CORS
-Enabling CORS is (currently) manually configured, 
-TODO: automate enabling CORS on Lambda and API Gateway in CFN. 
-
-
-
-###  Interface Notes
-
-* Request format:
+### Example request
 ```
 {
   "intent": LOCALIZED_MULTILANGUAGE_TEXT,
@@ -51,7 +59,8 @@ TODO: automate enabling CORS on Lambda and API Gateway in CFN.
 }
 ```
 
-* Sample response:
+### Example response
+
 ```
 {
   "local_language": "zh",
@@ -62,7 +71,8 @@ TODO: automate enabling CORS on Lambda and API Gateway in CFN.
 }
 ```
 
-* Confirmation response:
+### Example confirmation of order :
+
 ```
 {
   "confirmation": {
@@ -86,4 +96,27 @@ TODO: automate enabling CORS on Lambda and API Gateway in CFN.
       }
     }
   }
-}```
+}
+```
+
+## Contributing
+ 
+1. Fork it!
+2. Create your feature branch: `git checkout -b my-new-feature`
+3. Commit your changes: `git commit -am 'Add some feature'`
+4. Push to the branch: `git push origin my-new-feature`
+5. Submit a pull request :D
+ 
+
+## License
+
+The MIT License (MIT)
+
+Copyright (c) 2019 Frank Ang
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
