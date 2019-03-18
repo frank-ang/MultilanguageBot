@@ -6,19 +6,19 @@ The solution deploys a tranlation layer in front of the example Order Flowers Am
 
 ## Design
 
-![Multilanguage Chatbot architecture](doc/architecture.jpeg) 
+![Multilanguage Chatbot architecture](doc/architecture.png) 
 
 The environment is defined in a SAM template: [MultilanguageBot.yaml](). 
 
 ### User Experience
 
-A sample [BotUI](https://botui.org/) user interface is provided. The following illustrates the bot contextually switching between 2 different languages in response to user input. In this example, the front-end switches between Chinese (Simplified) and Bahasa Indonesia, mediating with the Lex back-end which remains limited to US English. To users, the bot appears multilingual.
+A sample [BotUI](https://botui.org/) user interface is provided. The following illustrates the bot contextually switching between 2 different languages in response to user input. In this example, the front-end switches between Chinese (Simplified) and Bahasa Indonesia, mediating with the Lex back-end which remains limited to US English. To users, the effect is the bot appears to be multilingual.
 
 ![Mixing Chinese and Indonesian in session](doc/botui-session.png) 
 
-### CORS
+### Cross-origin resource sharing (CORS)
 
-The CORS ("Cross-origin resource sharing") browser security restriction arises from the fact that the S3 website endpoint and API Gateway endpoint have different DNS domain names.
+The CORS browser security restriction arises from the fact that the S3 website endpoint and API Gateway endpoint have different DNS domain names.
 
 To get around this, and to avoid fiddling with configuring CORS on API Gateway and Lambda, the approach used in this solution utilizes a common CloudFront distribution in front of both the S3 website and the API Gateway endpoint. 
 
