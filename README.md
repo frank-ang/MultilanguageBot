@@ -62,11 +62,19 @@ TODO: add more details and create the child CFN stacks.
 
 ## API Testing
 
-### Example request
+Request format:
 ```
 {
   "intent": LOCALIZED_MULTILANGUAGE_TEXT,
   "userid": USER_ID
+}
+```
+
+E.g.
+```
+{
+  "intent": "Je souhaite acheter des fleurs",
+  "userid": "user01"
 }
 ```
 

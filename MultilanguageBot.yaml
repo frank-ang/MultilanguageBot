@@ -13,45 +13,30 @@ Parameters:
     Default: arn:aws:cognito-idp:us-east-1:331780945983:userpool/us-east-1_PeluZ6Sb7
 
 Resources:
-
+  # FYI, a good reference to setup Cognito Auth per API methods:
+  # https://github.com/awslabs/serverless-application-model/blob/master/examples/2016-10-31/api_cognito_auth/template.yaml
   MultilanguageBotApi:
     Type: AWS::Serverless::Api
     Properties:
-      StageName: Prod
-      DefinitionBody:
-        swagger: 2.0
-        info:
-          title:
-            Ref: AWS::StackName
-        paths:
-              "/MultilanguageBot":
-                post:
-                  x-amazon-apigateway-integration:
-                    httpMethod: POST
-                    type: aws_proxy
-                    uri:
-                      Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${MultilanguageBotFunction.Arn}/invocations
-                  responses: {}
+      StageName: PROD
       Cors: "'*'"
       Auth:
-        DefaultAuthorizer: MyApiCognitoAuthorizer
+        DefaultAuthorizer: MyCognitoAuthorizer
         Authorizers:
-          MyApiCognitoAuthorizer:
-            UserPoolArn: 
-              Ref: CognitoUserPoolArn
+          MyCognitoAuthorizer:
+            UserPoolArn: !Ref CognitoUserPoolArn
 
   MultilanguageBotFunction:
     Type: AWS::Serverless::Function
     Properties:
-      #FunctionName: 
-       # Fn::Sub: ${AWS::StackName}-MultilanguageBot
       Handler: lex/botTranslator.lambda_handler
       Runtime: python3.6
       CodeUri: ./
-      Events:
+      Events:  
         MultilanguageBotApi:
           Type: Api
           Properties:
+            RestApiId: !Ref MultilanguageBotApi
             Path: /MultilanguageBot
             Method: POST
             Auth:
