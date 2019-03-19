@@ -41,6 +41,17 @@ Launch the CloudFormation/SAM template: [MultilanguageBot.yaml]().
 
 This creates a BotTranslator Lambda function and API Gateway endpoint. IAM permissions are setup to permit calls to Comprehend, Translate, and Lex. 
 
+Package SAM template into a CloudFormation template and create a stack:
+
+E.g.
+```
+sam package --template-file MultilanguageBot.yaml --s3-bucket sandbox01-demo-iad --output-template-file ./samOutput.yaml.gitignore
+
+aws cloudformation deploy --capabilities CAPABILITY_IAM --template-file ./samOutput.yaml.gitignore --stack-name chatbox-test-X
+
+```
+
+
 ### 4. Web stack
 
 This is the S3 website hosting the botui.js web client, with AuthN via Cognito. Upload of new S3 content performed by CodePipeline + CodeBuild.

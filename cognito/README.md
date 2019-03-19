@@ -24,25 +24,30 @@ aws cognito-idp admin-confirm-sign-up \
   --username $USERNAME
 ```
 
-#### Confirm user accounts in FORCE_CHANGE_PASSWORD state, e.g. created from AWS Console.
-```
-# initiate auth on behalf of the user, get the session key
+#### Confirm user accounts in FORCE_CHANGE_PASSWORD state, 
 
-aws cognito-idp admin-initiate-auth --user-pool-id $USER_POOL_ID --client-id $APP_CLIENT_ID --auth-flow ADMIN_NO_SRP_AUTH --auth-parameters USERNAME=$USERNAME,PASSWORD=$CURRENT_PASSWORD
+This happens when users are initially created created, e.g from AWS Console.
 
+Enable User Pool client settings. Go to:
+```General settings -> App clients -> Details``` 
+check the following: 
+* ```Enable sign-in API for server-based authentication (ADMIN_NO_SRP_AUTH)```
+* ```Enable username-password (non-SRP) flow for app-based authentication (USER_PASSWORD_AUTH)```
+
+
+1. Initiate auth on behalf of the user, get the session key
+
+Get a session key by authenticating administratively with the user temp password: 
 SESSION_KEY=`aws cognito-idp admin-initiate-auth --user-pool-id $USER_POOL_ID --client-id $APP_CLIENT_ID --auth-flow ADMIN_NO_SRP_AUTH --auth-parameters USERNAME=$USERNAME,PASSWORD=$CURRENT_PASSWORD | jq -r ".Session"`
 
-# set user password
-
+2. set user password
+```
 aws cognito-idp admin-respond-to-auth-challenge --user-pool-id $USER_POOL_ID --client-id $APP_CLIENT_ID --challenge-name NEW_PASSWORD_REQUIRED --challenge-responses NEW_PASSWORD=$DESIRED_PASSWORD,USERNAME=$USERNAME,userAttributes.name=$USERNAME --session $SESSION_KEY
 ```
-### Authenticate as user:
 
-```
-# response format is JWT Bearer token. 
-aws cognito-idp initiate-auth --client-id $APP_CLIENT_ID --auth-flow USER_PASSWORD_AUTH --auth-parameters USERNAME=$USERNAME,PASSWORD=$DESIRED_PASSWORD
+3. Now Authenticate normally and get the OAUTH_ID_TOKEN:
 
-# Try again, get the Id Token:
+Response format is JWT Bearer token. Get the Id Token:
 OAUTH_ID_TOKEN=`aws cognito-idp initiate-auth --client-id $APP_CLIENT_ID --auth-flow USER_PASSWORD_AUTH --auth-parameters USERNAME=$USERNAME,PASSWORD=$DESIRED_PASSWORD | jq -r ".AuthenticationResult.IdToken"`
 ```
 

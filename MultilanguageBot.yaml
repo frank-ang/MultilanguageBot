@@ -1,20 +1,65 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: Multilanguage Bot
+
+Parameters: 
+  UserPoolId: 
+    Type: String
+    # TODO remove  hardcoding.
+    Default: us-east-1_PeluZ6Sb7
+  CognitoUserPoolArn:
+    Type: String
+    # TODO remove  hardcoding.
+    Default: arn:aws:cognito-idp:us-east-1:331780945983:userpool/us-east-1_PeluZ6Sb7
+
 Resources:
+
+  MultilanguageBotApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: Prod
+      DefinitionBody:
+        swagger: 2.0
+        info:
+          title:
+            Ref: AWS::StackName
+        paths:
+              "/MultilanguageBot":
+                post:
+                  x-amazon-apigateway-integration:
+                    httpMethod: POST
+                    type: aws_proxy
+                    uri:
+                      Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${MultilanguageBotFunction.Arn}/invocations
+                  responses: {}
+      Cors: "'*'"
+      Auth:
+        DefaultAuthorizer: MyApiCognitoAuthorizer
+        Authorizers:
+          MyApiCognitoAuthorizer:
+            UserPoolArn: 
+              Ref: CognitoUserPoolArn
+
   MultilanguageBotFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: MultilanguageBot
+      #FunctionName: 
+       # Fn::Sub: ${AWS::StackName}-MultilanguageBot
       Handler: lex/botTranslator.lambda_handler
       Runtime: python3.6
       CodeUri: ./
       Events:
-        MyTimeApi:
+        MultilanguageBotApi:
           Type: Api
           Properties:
             Path: /MultilanguageBot
             Method: POST
+            Auth:
+              DefaultAuthorizer: MyCognitoAuthInBotYaml
+              Authorizers:
+                MyCognitoAuthInBotYaml:
+                  UserPoolArn: 
+                    Ref: CognitoUserPoolArn
       Policies:
        - AWSLambdaExecute # Managed Policy
        - AmazonLexReadOnly # Managed Policy
