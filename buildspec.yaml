@@ -11,7 +11,7 @@ phases:
   install:
     commands:
       # generate the SAM Template
-      - aws cloudformation package --template-file samTemplate.yaml --s3-bucket ${CFN_ARTIFACT_BUCKET}
+      - aws cloudformation package --template-file MultilanguageBot.yaml --s3-bucket ${CFN_ARTIFACT_BUCKET}
                                    --output-template-file outputSamTemplate.yaml
       # deploy the Bot UI web page 
       # TODO it would be more sensible to first update the service itself, followed by this UI. 
