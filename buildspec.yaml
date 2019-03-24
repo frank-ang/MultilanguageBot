@@ -15,6 +15,7 @@ phases:
                                    --output-template-file outputSamTemplate.yaml
       # deploy the Bot UI web page 
       # TODO it would be more sensible to first update the service itself, followed by this UI. 
+      # TODO also figure out S3 Blue/Green S3 deployment.
       - aws s3 sync --acl public-read --delete ./botui/ s3://${BOTUI_BUCKET_NAME}/botui/
       - aws s3 cp --acl public-read ./botui/favicon.ico s3://${BOTUI_BUCKET_NAME}/favicon.ico
 artifacts:

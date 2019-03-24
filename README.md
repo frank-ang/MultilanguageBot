@@ -62,12 +62,13 @@ Package SAM template into a CloudFormation template, then Deploy the stack:
 
 E.g.
 ```
-# Set this:
-COGNITO_STACK_NAME=SetMe
+# Change these paramters:
+COGNITO_STACK_NAME=CognitoTestStack03
+S3_BUCKET=sandbox01-demo-iad
 
-sam package --template-file MultilanguageBot.yaml --s3-bucket sandbox01-demo-iad --output-template-file ./samOutput.yaml.gitignore
+sam package --template-file MultilanguageBot.yaml --s3-bucket $S3_BUCKET --output-template-file ./samOutput.yaml.gitignore
 
-aws cloudformation deploy --capabilities CAPABILITY_IAM --template-file ./samOutput.yaml.gitignore --parameter-overrides "CreateCognitoResource=true" --parameter-overrides "CognitoStackName=$COGNITO_STACK_NAME" --stack-name BotTestStack03
+aws cloudformation deploy --capabilities CAPABILITY_IAM --template-file ./samOutput.yaml.gitignore --parameter-overrides "CognitoStackName=$COGNITO_STACK_NAME" --stack-name BotTestStack03
 
 ```
 
