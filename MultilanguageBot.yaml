@@ -3,16 +3,14 @@ Transform: AWS::Serverless-2016-10-31
 Description: Multilanguage Bot
 
 Parameters: 
-  UserPoolId: 
+
+  CognitoStackName:
+    Description: Name of a Cloudformation stack containing the cross-stack Cognito resources for AuthN
     Type: String
-    # TODO remove  hardcoding.
-    Default: us-east-1_PeluZ6Sb7
-  CognitoUserPoolArn:
-    Type: String
-    # TODO remove  hardcoding.
-    Default: arn:aws:cognito-idp:us-east-1:331780945983:userpool/us-east-1_PeluZ6Sb7
+    AllowedPattern : "^[a-zA-Z][a-zA-Z0-9]*$"
 
 Resources:
+  # Bot API
   # FYI, a good reference to setup Cognito Auth per API methods:
   # https://github.com/awslabs/serverless-application-model/blob/master/examples/2016-10-31/api_cognito_auth/template.yaml
   MultilanguageBotApi:
@@ -24,7 +22,10 @@ Resources:
         DefaultAuthorizer: MyCognitoAuthorizer
         Authorizers:
           MyCognitoAuthorizer:
-            UserPoolArn: !Ref CognitoUserPoolArn
+            UserPoolArn: !Sub
+              - arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/${CognitoUserPoolId}
+              - CognitoUserPoolId:
+                  Fn::ImportValue: !Sub ${CognitoStackName}-UserPool
 
   MultilanguageBotFunction:
     Type: AWS::Serverless::Function
@@ -39,16 +40,17 @@ Resources:
             RestApiId: !Ref MultilanguageBotApi
             Path: /MultilanguageBot
             Method: POST
-            Auth:
-              DefaultAuthorizer: MyCognitoAuthInBotYaml
-              Authorizers:
-                MyCognitoAuthInBotYaml:
-                  UserPoolArn: 
-                    Ref: CognitoUserPoolArn
       Policies:
        - AWSLambdaExecute # Managed Policy
        - AmazonLexReadOnly # Managed Policy
        - ComprehendReadOnly # Managed Policy
        - AmazonLexRunBotsOnly # Managed Policy
        - TranslateReadOnly # Managed Policy
+
+Outputs:
+  MultilanguageBotFunction:
+    Value: !Ref MultilanguageBotFunction
+  MultilanguageBotApi:
+    Value: !Ref MultilanguageBotApi
+
 

@@ -1,7 +1,4 @@
-//var botui = new BotUI('flowers-bot');
-
 var _botUi = new BotUI('flowers-bot');
-
 
 function userInput() {
 	return _botUi.action.text({

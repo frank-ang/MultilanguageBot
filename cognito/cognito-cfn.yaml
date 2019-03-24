@@ -1,22 +1,28 @@
 AWSTemplateFormatVersion: '2010-09-09'
-# Transform: AWS::Serverless-2016-10-31
-Description: Demo Cognito UserPool
+Description: Cognito UserPool test stack for the Multilanguage Bot project.
 
-Parameters:
-  AuthName:
+# cross-stack references.
+# 
+Parameters: 
+
+  TestUserEmail:
     Type: String
-    Default: starbase
-    Description: Unique Auth Name for Cognito Resources
+    Default: frankang+changeme@amazon.com
+    Description: Email address for the test user for the demo web app. A temp password is sent to this email for user confirmation.
 
 Resources:
 
-  # Creates a user pool in cognito for your app to auth against
-  UserPool:
-    Type: "AWS::Cognito::UserPool"
+  MyUserPool:
+    Type: AWS::Cognito::UserPool
     Properties:
-      UserPoolName: !Sub ${AuthName}-user-pool
+      UserPoolName: !Sub ${AWS::StackName}-userpool
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
       AutoVerifiedAttributes:
         - email
+      MfaConfiguration: 'OFF'
+      EmailVerificationSubject: !Ref AWS::StackName
       Schema:
         - Name: name
           AttributeDataType: String
@@ -25,28 +31,27 @@ Resources:
         - Name: email
           AttributeDataType: String
           Mutable: false
-          Required: true
-  
-  # Creates a User Pool Client to be used by the identity pool
-  UserPoolClient:
-    Type: "AWS::Cognito::UserPoolClient"
+          Required: false
+
+  MyUserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
     Properties:
-      ClientName: !Sub ${AuthName}-client
+      UserPoolId: !Ref MyUserPool
+      ClientName: !Sub ${AWS::StackName}-client
+      GenerateSecret: false
       ExplicitAuthFlows: 
         - ADMIN_NO_SRP_AUTH
         - USER_PASSWORD_AUTH
-      GenerateSecret: false
-      UserPoolId: !Ref UserPool
-  
+
   # Creates a federeated Identity pool
-  IdentityPool:
+  MyIdentityPool:
     Type: "AWS::Cognito::IdentityPool"
     Properties:
-      IdentityPoolName: !Sub ${AuthName}Identity
+      IdentityPoolName: !Sub ${AWS::StackName}Identity
       AllowUnauthenticatedIdentities: true
       CognitoIdentityProviders: 
-        - ClientId: !Ref UserPoolClient
-          ProviderName: !GetAtt UserPool.ProviderName
+        - ClientId: !Ref MyUserPoolClient
+          ProviderName: !GetAtt MyUserPool.ProviderName
 
   # Create a role for unauthorized acces to AWS resources. Very limited access. Only allows users in the previously created Identity Pool
   CognitoUnAuthorizedRole:
@@ -62,7 +67,7 @@ Resources:
               - "sts:AssumeRoleWithWebIdentity"
             Condition:
               StringEquals: 
-                "cognito-identity.amazonaws.com:aud": !Ref IdentityPool
+                "cognito-identity.amazonaws.com:aud": !Ref MyIdentityPool
               "ForAnyValue:StringLike":
                 "cognito-identity.amazonaws.com:amr": unauthenticated
       Policies:
@@ -91,7 +96,7 @@ Resources:
               - "sts:AssumeRoleWithWebIdentity"
             Condition:
               StringEquals: 
-                "cognito-identity.amazonaws.com:aud": !Ref IdentityPool
+                "cognito-identity.amazonaws.com:aud": !Ref MyIdentityPool
               "ForAnyValue:StringLike":
                 "cognito-identity.amazonaws.com:amr": authenticated
       Policies:
@@ -114,21 +119,37 @@ Resources:
   IdentityPoolRoleMapping:
     Type: "AWS::Cognito::IdentityPoolRoleAttachment"
     Properties:
-      IdentityPoolId: !Ref IdentityPool
+      IdentityPoolId: !Ref MyIdentityPool
       Roles:
         authenticated: !GetAtt CognitoAuthorizedRole.Arn
         unauthenticated: !GetAtt CognitoUnAuthorizedRole.Arn
 
+  # Create a test user required for the web app demo.
+  MyTestUser:
+    Type: AWS::Cognito::UserPoolUser
+    Properties:
+      Username: user01
+      DesiredDeliveryMediums:
+        - EMAIL
+      UserPoolId:
+        Ref: MyUserPool
+      UserAttributes:
+        - Name: email
+          Value: !Ref TestUserEmail
+
 Outputs:
+
   UserPoolId:
-    Value: !Ref UserPool
+    Value: !Ref MyUserPool  
     Export:
-      Name: "UserPool::Id"
+      Name: !Sub "${AWS::StackName}-UserPool"
+
   UserPoolClientId:
-    Value: !Ref UserPoolClient
+    Value: !Ref MyUserPoolClient
     Export:
-      Name: "UserPoolClient::Id"
+      Name: !Sub "${AWS::StackName}-UserPoolClient"
+
   IdentityPoolId:
-    Value: !Ref IdentityPool
+    Value: !Ref MyIdentityPool
     Export:
-      Name: "IdentityPool::Id"
+      Name: !Sub "${AWS::StackName}-IdentityPool"

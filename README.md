@@ -10,6 +10,15 @@ The solution deploys a tranlation layer in front of the example Order Flowers Am
 
 The environment is defined in a SAM template: [MultilanguageBot.yaml](). 
 
+TODO: split up into multiple CFN templates:
+* ./MultilanguageBot.yaml
+* cognito/cognito-cfn.yaml
+* TODO/website.yaml
+* TODO/pipeline.yaml
+  ** TODO: codebuild with environment variables.
+
+The solution represents a nïeve implementation, I do not have a linguistics background and am unable to identify potential edge cases of semantic mistranslations. Perhaps some Mechanical Turk testing could verify the quality of the bot by human native speaker testers (TODO potential enhancement).
+
 ### User Experience
 
 A sample [BotUI](https://botui.org/) user interface is provided. The following illustrates the bot contextually switching between 2 different languages in response to user input. In this example, the front-end switches between Chinese (Simplified) and Bahasa Indonesia, mediating with the Lex back-end which remains limited to US English. To users, the effect is the bot appears to be multilingual.
@@ -22,35 +31,45 @@ The CORS browser security restriction arises from the fact that the S3 website e
 
 To get around this, and to avoid fiddling with configuring CORS on API Gateway and Lambda, the approach used in this solution utilizes a common CloudFront distribution in front of both the S3 website and the API Gateway endpoint. 
 
+Have not investigated what is the way for CloudFormation to setup CORS on API GW Regional Endpoint.
+
 ## Installation
 
 #### 1. Create a Lex Bot: 
  * Create the default "OrderFlowers" example using a blueprint. [https://docs.aws.amazon.com/lex/latest/dg/gs-bp-create-bot.html]()
 
-### 2. Cognito Stack
-Identity systems are shared across apps, so an existing Cognito setup can be used, or optionally, created using a new stack.
+### 2. Create Cognito resources
+
+Create the Cognito stack. This is a standalone stack, and Cognito resources would be referenced cross-stack from the Bot stack. 
 
 Steps:
 
 * create Cognito stack [cognito/cognito-cfn.yaml]()
 * create Cognito user [cognito/README.md]()
 
-### 3. Multilanguage Function Stack
+Identity systems are shared across apps, so its possible to use an existing Cognito stack, you probably need to edit the Bot Cloudformation template to resolve any broken references. 
 
-Launch the CloudFormation/SAM template: [MultilanguageBot.yaml](). 
 
-This creates a BotTranslator Lambda function and API Gateway endpoint. IAM permissions are setup to permit calls to Comprehend, Translate, and Lex. 
+### 3. Create Multilanguage API resources
 
-Package SAM template into a CloudFormation template and create a stack:
+Create the main Bot stack. This has dependencies on the Cognito stack and makes cross-stack resource references, instead of stack nesting.
+
+The Bot stack creates a BotTranslator Lambda function and API Gateway endpoint. IAM permissions are setup to permit calls to Comprehend, Translate, and Lex. 
+
+SAM template: [MultilanguageBot.yaml]()
+
+Package SAM template into a CloudFormation template, then Deploy the stack:
 
 E.g.
 ```
+# Set this:
+COGNITO_STACK_NAME=SetMe
+
 sam package --template-file MultilanguageBot.yaml --s3-bucket sandbox01-demo-iad --output-template-file ./samOutput.yaml.gitignore
 
-aws cloudformation deploy --capabilities CAPABILITY_IAM --template-file ./samOutput.yaml.gitignore --stack-name chatbox-test-X
+aws cloudformation deploy --capabilities CAPABILITY_IAM --template-file ./samOutput.yaml.gitignore --parameter-overrides "CreateCognitoResource=true" --parameter-overrides "CognitoStackName=$COGNITO_STACK_NAME" --stack-name BotTestStack03
 
 ```
-
 
 ### 4. Web stack
 
@@ -77,6 +96,8 @@ E.g.
   "userid": "user01"
 }
 ```
+
+
 
 ### Example response
 
