@@ -1,6 +1,6 @@
 # Cognito Test Stack
 
-## Installing
+## Installing: Deploy the stack
 
 Deploy the stack. Replace ```TestUserEmail``` parameter with a valid email address, A temporary password will be emailed to you.
 

@@ -1,6 +1,6 @@
 # Multilanguage Chatbot
 
-The Multilanguage Lex Bot example demonstrates a pattern to enable AWS customers to configure multilanguage conversational bot experiences across all 21 languages, overcoming the current US English monolingual limitationof Amazon Lex. 
+The Multilanguage Lex Bot example demonstrates a pattern to enable AWS customers to configure multilanguage conversational bot experiences across the 21 languages supported by Amazon Translate, overcoming the current US English monolingual limitation of Amazon Lex. 
 
 The solution deploys a tranlation layer in front of the example Order Flowers Amazon Lex bot. This simple pattern provides a way for Amazon Lex bots to converse in all 21 languages supported by Amazon Translate. 
 
@@ -17,7 +17,7 @@ TODO: split up into multiple CFN templates:
 * TODO/pipeline.yaml
   ** TODO: codebuild with environment variables.
 
-The solution represents a nïeve implementation, I do not have a linguistics background and am unable to identify potential edge cases of semantic mistranslations. Perhaps some Mechanical Turk testing could verify the quality of the bot by human native speaker testers (TODO potential enhancement).
+The solution is a nïeve implementation. Perhaps someone with a linguistics background might be able to identify potential edge cases of semantic mistranslations. Perhaps some Mechanical Turk testing could verify the quality of the bot by human native speaker testers (TODO potential enhancement).
 
 ### User Experience
 

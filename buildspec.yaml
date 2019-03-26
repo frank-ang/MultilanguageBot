@@ -3,6 +3,9 @@ version: 0.2
 env:
   variables:
     # Adjust these to your environment.
+    # TODO use environment variables defined in pipeline CFN stack. 
+    # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-codebuild-project-environment.html#cfn-codebuild-project-environment-environmentvariables
+
     CFN_ARTIFACT_BUCKET: "codepipeline-sandbox01-iad"
     BOTUI_BUCKET_NAME: "www.sandbox01.demolab.host"
     # BOTUI_S3_URL: "s3://www.sandbox01.demolab.host/botui/"
