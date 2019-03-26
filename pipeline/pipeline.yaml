@@ -8,15 +8,17 @@ Parameters:
     Type: String
   GitHubUser:
     Type: String
+  WebsiteBucket:
+    Type: String
 
 Resources:
 
   ArtifactBucket:
     Type: AWS::S3::Bucket
 
-  ## Main pipeline stages ##
+  ## Main pipeline and stages ##
   Pipeline:
-    
+    DependsOn: ArtifactBucket
     Type: AWS::CodePipeline::Pipeline
     Properties:
       RoleArn: !GetAtt CodePipelineServiceRole.Arn
@@ -57,11 +59,41 @@ Resources:
                 - Name: BuildOutput
               RunOrder: 2
 
+
+  # Build.
+  # Unable to upload artifact ./ referenced by CodeUri parameter of MultilanguageBotFunction resource.
+  # An error occurred (AccessDenied) when calling the PutObject operation: Access Denied
+
+  # TODO: set environment vars for CFN_ARTIFACT_BUCKET and BOTUI_BUCKET_NAME
+  CodeBuildProject:
+    DependsOn: ArtifactBucket
+    Type: AWS::CodeBuild::Project
+ 
+    Properties:
+      Name: !Sub ${AWS::StackName}-build
+      Description: Builds SAM template and updates S3 website
+      ServiceRole: !Ref CodeBuildServiceRole 
+
+      Source:
+        Type: CODEPIPELINE
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        ComputeType: "BUILD_GENERAL1_SMALL"
+        Image: "aws/codebuild/python:3.6.5"
+        Type: "LINUX_CONTAINER"
+        EnvironmentVariables:
+          - Name: ARTIFACT_BUCKET
+            Value: !Ref ArtifactBucket
+          - Name: WEBSITE_BUCKET
+            Value: !Ref WebsiteBucket
+
   ## Roles ##
+
   CloudFormationExecutionRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub ${AWS::StackName}-cfn-exec-role
+      RoleName: !Sub ${AWS::StackName}-cfn-exec
       Path: /
       AssumeRolePolicyDocument: |
         {
@@ -107,11 +139,19 @@ Resources:
                   - logs:CreateLogGroup
                   - logs:CreateLogStream
                   - logs:PutLogEvents
+                  - cloudformation:*
               - Resource: !Sub arn:aws:s3:::${ArtifactBucket}/*
                 Effect: Allow
                 Action:
                   - s3:GetObject
                   - s3:PutObject
+                  - s3:GetObjectVersion
+              - Resource: !Sub arn:aws:s3:::${WebsiteBucket}/*
+                Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:PutObjectAcl
                   - s3:GetObjectVersion
 
   CodePipelineServiceRole:
@@ -147,27 +187,6 @@ Resources:
                   - codebuild:BatchGetBuilds
                   - cloudformation:*
                   - iam:PassRole
-
-#Invalid project source: source location must be a valid GitHub repository URL
-  CodeBuildProject:
-    Type: AWS::CodeBuild::Project
- 
-    Properties:
-      Name: !Sub ${AWS::StackName}
-      Description: !Sub Build project for SAM template and S3
-      ServiceRole: !Ref CodeBuildServiceRole 
-
-      Source:
-        Type: CODEPIPELINE
-      Artifacts:
-        Type: "CODEPIPELINE"
-      Environment:
-        ComputeType: "BUILD_GENERAL1_SMALL"
-        Image: "aws/codebuild/python:3.6.5"
-        Type: "LINUX_CONTAINER"
-        EnvironmentVariables:
-          - Name: GITHUB_TOKEN_REMOVE_ME
-            Value: !Ref GitHubToken
 
 Outputs:
   PipelineUrl:

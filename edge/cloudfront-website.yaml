@@ -28,7 +28,7 @@ Resources:
       AccessControl: Private
       WebsiteConfiguration:
         IndexDocument: index.html
-        ErrorDocument: 404.html
+        # ErrorDocument: 404.html
     DeletionPolicy: Retain
 
   WebsiteBucketPolicy:

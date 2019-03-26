@@ -1,26 +1,25 @@
 version: 0.2
 
 env:
-  variables:
+  #variables:
     # Adjust these to your environment.
     # TODO use environment variables defined in pipeline CFN stack. 
     # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-codebuild-project-environment.html#cfn-codebuild-project-environment-environmentvariables
-
-    CFN_ARTIFACT_BUCKET: "codepipeline-sandbox01-iad"
-    BOTUI_BUCKET_NAME: "www.sandbox01.demolab.host"
+    ## CFN_ARTIFACT_BUCKET: "codepipeline-sandbox01-iad"
+    ## BOTUI_BUCKET_NAME: "www.sandbox01.demolab.host"
     # BOTUI_S3_URL: "s3://www.sandbox01.demolab.host/botui/"
 
 phases:
   install:
     commands:
       # generate the SAM Template
-      - aws cloudformation package --template-file MultilanguageBot.yaml --s3-bucket ${CFN_ARTIFACT_BUCKET}
+      - aws cloudformation package --template-file MultilanguageBot.yaml --s3-bucket ${ARTIFACT_BUCKET}
                                    --output-template-file outputSamTemplate.yaml
       # deploy the Bot UI web page 
       # TODO it would be more sensible to first update the service itself, followed by this UI. 
       # TODO also figure out S3 Blue/Green S3 deployment.
-      - aws s3 sync --acl public-read --delete ./botui/ s3://${BOTUI_BUCKET_NAME}/botui/
-      - aws s3 cp --acl public-read ./botui/favicon.ico s3://${BOTUI_BUCKET_NAME}/favicon.ico
+      - aws s3 sync --acl public-read --delete ./botui/ s3://${WEBSITE_BUCKET}/botui/
+      - aws s3 cp --acl public-read ./botui/favicon.ico s3://${WEBSITE_BUCKET}/favicon.ico
 artifacts:
   type: zip
   files:
