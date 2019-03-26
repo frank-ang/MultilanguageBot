@@ -1,6 +1,6 @@
 version: 0.2
 
-env:
+#env:
   #variables:
     # Adjust these to your environment.
     # TODO use environment variables defined in pipeline CFN stack. 
