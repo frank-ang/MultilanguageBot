@@ -32,7 +32,6 @@ phases:
 
       # sed -ne "s/\('region'[[:space:]]*:\).*$/\1 'foo',/p" config.tmp.gitignore
       # sed -ne "s|\('api_url'[[:space:]]*:\).*$|\1 '$api_url',|p" config.tmp.gitignore
-s
       # Deploy the Bot UI web page 
       # 2-stage deployment: website deploy followed by API deploy 
       # Perhaps it would be more sensible to first update the API, followed by the website? 
