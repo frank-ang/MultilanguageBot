@@ -25,13 +25,14 @@ phases:
       - sed -i -e "s/\('identity_pool_id'[[:space:]]*:\).*$/\1 '$IDENTITY_POOL_ID',/g" $JS_CONFIG_FILE
       - sed -i -e "s/\('user_pool_id'[[:space:]]*:\).*$/\1 '$user_pool_id',/g" $JS_CONFIG_FILE
       - sed -i -e "s/\('user_pool_client_id'[[:space:]]*:\).*$/\1 '$user_pool_client_id',/g" $JS_CONFIG_FILE
-      - sed -i -e "s/\('api_url'[[:space:]]*:\).*$/\1 '$api_url',/g" $JS_CONFIG_FILE
+      - sed -i -e "s|\('api_url'[[:space:]]*:\).*$|\1 '$api_url',|g" $JS_CONFIG_FILE
       - sed -i -e "s/\('test_user_name'[[:space:]]*:\).*$/\1 '$test_user_name',/g" $JS_CONFIG_FILE
       - sed -i -e "s/\('test_user_cred'[[:space:]]*:\).*$/\1 '$test_user_cred'/g" $JS_CONFIG_FILE
       - cat $JS_CONFIG_FILE
 
       # sed -ne "s/\('region'[[:space:]]*:\).*$/\1 'foo',/p" config.tmp.gitignore
-
+      # sed -ne "s|\('api_url'[[:space:]]*:\).*$|\1 '$api_url',|p" config.tmp.gitignore
+s
       # Deploy the Bot UI web page 
       # 2-stage deployment: website deploy followed by API deploy 
       # Perhaps it would be more sensible to first update the API, followed by the website? 
