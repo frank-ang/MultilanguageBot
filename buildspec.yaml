@@ -1,23 +1,32 @@
 version: 0.2
-
-#env:
-  #variables:
-    # Adjust these to your environment.
-    # TODO use environment variables defined in pipeline CFN stack. 
-    # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-codebuild-project-environment.html#cfn-codebuild-project-environment-environmentvariables
-    ## CFN_ARTIFACT_BUCKET: "codepipeline-sandbox01-iad"
-    ## BOTUI_BUCKET_NAME: "www.sandbox01.demolab.host"
-    # BOTUI_S3_URL: "s3://www.sandbox01.demolab.host/botui/"
-
+# 1. Generates the SAM template in preparation of Lambda stack update.
+# 2. Deploys the Bot UI web page to S3.
+# Requires environment variables to be defined for ARTIFACT_BUCKET and WEBSITE_BUCKET
+env:
+  variables:
+    JS_CONFIG_FILE : "botui/js/config.js"
+    REGION : 'us-east-1'
+    identity_pool_id : 'us-east-1:b1a31b96-c947-492e-8189-1e14eafa2de1'
+    user_pool_id: 'us-east-1_QZZnuKKLY'
+    user_pool_client_id: '3de3267rqnmg9hdd60btcurlni'
+    api_url: 'https://www.sandbox01.demolab.host/PROD/MultilanguageBot'
+    test_user_name: 'user01'
+    test_user_cred: 'Xoyxoz123.'
 phases:
   install:
     commands:
       # generate the SAM Template
       - aws cloudformation package --template-file MultilanguageBot.yaml --s3-bucket ${ARTIFACT_BUCKET}
                                    --output-template-file outputSamTemplate.yaml
-      # deploy the Bot UI web page 
-      # TODO it would be more sensible to first update the service itself, followed by this UI. 
-      # TODO also figure out S3 Blue/Green S3 deployment.
+      # Replace parameters in the website javascript config file.
+      # Inject the account number and region into the Swagger file
+      - sed -i -e "s/\('region'[[:space:]]*:\).*$/\1 '$REGION',/g" $JS_CONFIG_FILE
+
+      # sed -ne "s/\('region'[[:space:]]*:\).*$/\1 'foo',/p" config.tmp.gitignore
+
+      # Deploy the Bot UI web page 
+      # This is a 2-stage deployment: website deploy followed by API deploy 
+      # Perhaps it would be more sensible to first update the API, followed by the website? 
       - aws s3 sync --acl public-read --delete ./botui/ s3://${WEBSITE_BUCKET}/botui/
       - aws s3 cp --acl public-read ./botui/favicon.ico s3://${WEBSITE_BUCKET}/favicon.ico
 artifacts:
