@@ -10,6 +10,8 @@ Parameters:
     Type: String
   WebsiteBucket:
     Type: String
+  IdentityPoolId:
+    Type: String
 
 Resources:
 
@@ -87,6 +89,10 @@ Resources:
             Value: !Ref ArtifactBucket
           - Name: WEBSITE_BUCKET
             Value: !Ref WebsiteBucket
+          - Name: REGION
+            Value: !Sub ${AWS::Region}
+          - Name: IDENTITY_POOL_ID
+            Value: !Ref IdentityPoolId
 
   ## Roles ##
 
