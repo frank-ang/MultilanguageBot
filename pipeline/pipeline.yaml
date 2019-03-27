@@ -6,12 +6,27 @@ Parameters:
     Default: 'master'
   GitHubToken:
     Type: String
+    # TODO change to use SSM parameter store
   GitHubUser:
     Type: String
   WebsiteBucket:
     Type: String
   IdentityPoolId:
     Type: String
+  UserPoolId: 
+    Type: String
+  UserPoolClientID: 
+    Type: String
+  ApiUrl:
+    Type: String
+  TestUserName:
+    Type: String
+    Default: user01
+    # TODO change to use SSM parameter store
+  TestUserCred:
+    Type: String
+    Default: Xoyxoz123.
+    # TODO change to use SSM parameter store
 
 Resources:
 
@@ -39,7 +54,6 @@ Resources:
               Configuration:
                 Owner: !Ref GitHubUser
                 Repo: !Ref GitHubRepo
-                # PollForSourceChanges: false
                 Branch: !Ref GitHubBranch
                 OAuthToken: !Ref GitHubToken
               OutputArtifacts:
@@ -61,12 +75,7 @@ Resources:
                 - Name: BuildOutput
               RunOrder: 2
 
-
-  # Build.
-  # Unable to upload artifact ./ referenced by CodeUri parameter of MultilanguageBotFunction resource.
-  # An error occurred (AccessDenied) when calling the PutObject operation: Access Denied
-
-  # TODO: set environment vars for CFN_ARTIFACT_BUCKET and BOTUI_BUCKET_NAME
+  ## Build. ##
   CodeBuildProject:
     DependsOn: ArtifactBucket
     Type: AWS::CodeBuild::Project
@@ -93,6 +102,18 @@ Resources:
             Value: !Sub ${AWS::Region}
           - Name: IDENTITY_POOL_ID
             Value: !Ref IdentityPoolId
+          - Name: USER_POOL_ID
+            Value: !Ref UserPoolId
+          - Name: USER_POOL_CLIENT_ID
+            Value: !Ref UserPoolClientID
+          - Name: API_URL
+            Value: !Ref ApiUrl
+          - Name: TEST_USER_NAME
+            Value: !Ref TestUserName
+            # TODO: use SSM parameter store
+          - Name: TEST_USER_CRED
+            Value: !Ref TestUserCred
+            # TODO: use SSM parameter store
 
   ## Roles ##
 

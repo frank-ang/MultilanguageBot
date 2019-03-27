@@ -11,8 +11,11 @@ aws cloudformation deploy --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM --t
  "GitHubToken=CHANGEME" \
  "GitHubUser=frank-ang" \
  "WebsiteBucket=bot03.sandbox01.demolab.host" \
- "IdentityPoolId=SOMETHING_HARDCODED" \
---stack-name BotPipeline02
+ "IdentityPoolId=CHANGE_ME" \
+ "UserPoolId=CHANGE_ME" \
+ "UserPoolClientID=CHANGE_ME" \
+ "ApiUrl=CHANGE_ME" \
+--stack-name BotPipelineXX
 ```
 For GitHubToken, this is the OAuth token. Go to https://github.com/settings/tokens 
 
