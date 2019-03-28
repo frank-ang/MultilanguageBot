@@ -1,0 +1,138 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Creates an S3 bucket configured for hosting a static website, and a Route
+  53 DNS record pointing to the bucket
+
+Parameters:
+
+  DomainName:
+    Type: String
+    Description: The DNS name of an existing Amazon Route 53 hosted zone.
+    AllowedPattern: (?!-)[a-zA-Z0-9-.]{1,63}(?<!-)
+    ConstraintDescription: must be a valid DNS zone name.
+  FullDomainName:
+    Type: String
+    Description: The full domain name.
+    AllowedPattern: (?!-)[a-zA-Z0-9-.]{1,63}(?<!-)
+    ConstraintDescription: must be a valid DNS zone name.
+  AcmCertificateArn:
+    Type: String
+    Description: the Amazon Resource Name (ARN) of an AWS Certificate Manager (ACM) certificate.
+    AllowedPattern: "arn:aws:acm:.*"
+  BotApiEndpoint:
+    Type: String
+    Description: Bot API regional endpoint.
+    AllowedPattern: ".*execute-api.*amazonaws.com.*"
+
+Resources:
+
+  # Empty Bucket to hold static stuff
+  WebsiteBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref 'FullDomainName'
+      AccessControl: Private # Access via CloudFront CDN only.
+      WebsiteConfiguration:
+        IndexDocument: index.html
+
+  ## Specifying the policies to make sure all files inside the Bucket are avaialble to CloudFront
+  WebsiteBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref 'WebsiteBucket'
+      PolicyDocument:
+        Statement:
+        - Sid: PublicReadForGetBucketObjects
+          Effect: Allow
+          Principal: '*'
+          Action: s3:GetObject
+          Resource: !Sub 'arn:aws:s3:::${WebsiteBucket}/*'
+
+  # Cloudfront distribution, that wraps the API Gateway, and the S3 bucket, as different origins
+  FrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    DependsOn:
+    - WebsiteBucket
+    - OriginAccessIdentity
+    Properties:
+      DistributionConfig:
+        Aliases: 
+          - !Ref FullDomainName
+        Comment: Bot Website
+        Enabled: "true"
+        DefaultRootObject: index.html
+        ViewerCertificate:
+          AcmCertificateArn: !Ref AcmCertificateArn
+          SslSupportMethod: sni-only
+        # The default caching applies to the default (root) objects, not to images etc...
+        DefaultCacheBehavior:
+          TargetOriginId: myS3Origin
+          AllowedMethods:
+          - GET
+          - HEAD
+          - OPTIONS
+          MinTTL: "0"
+          MaxTTL: "0"
+          DefaultTTL: "0"
+          ForwardedValues:
+            QueryString: 'true'
+            Cookies:
+              Forward: all
+          ViewerProtocolPolicy: redirect-to-https
+        # Define two behaviours of how we cache responses
+        CacheBehaviors:
+        - TargetOriginId: myAPIOrigin
+          # TODO test fix hardcoding, parse path from URL: '/PROD/MultilanguageBot*'
+          PathPattern: !Select [1, !Split ["amazonaws.com", !Ref BotApiEndpoint]]
+          AllowedMethods:
+          - HEAD
+          - DELETE
+          - POST
+          - GET
+          - OPTIONS
+          - PUT
+          - PATCH
+          ForwardedValues:
+            QueryString: "false"
+          ViewerProtocolPolicy: https-only
+          MinTTL: "0"
+          MaxTTL: "6"
+          DefaultTTL: "3"
+        Origins:
+          # Origin from S3 website
+          - Id: myS3Origin
+            DomainName: !GetAtt WebsiteBucket.DomainName
+            S3OriginConfig:
+              OriginAccessIdentity: !Sub "origin-access-identity/cloudfront/${OriginAccessIdentity}"
+          # Origin from API Gateway
+          - Id: myAPIOrigin
+            DomainName: !Select [2, !Split ["/", !Ref BotApiEndpoint]]
+            CustomOriginConfig:
+              OriginProtocolPolicy: https-only
+
+  OriginAccessIdentity:
+    Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
+    Properties:
+      CloudFrontOriginAccessIdentityConfig:
+        Comment: "Cloudfront to S3 origin access identity"
+
+  ## Route 53 ##
+  WebsiteDNSName:
+    Type: AWS::Route53::RecordSetGroup
+    Properties:
+      HostedZoneName: !Join ['', [!Ref 'DomainName', .]]
+      RecordSets:
+      - Name: !Ref 'FullDomainName'
+        Type: A
+        AliasTarget:
+          # Cloudfront hosted zone is hardcoded. Obscure docs:
+          # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-route53-aliastarget.html 
+          HostedZoneId: Z2FDTNDATAQYW2
+          DNSName: !GetAtt [FrontDistribution, DomainName]
+
+Outputs:
+  BucketName:
+    Value: !Ref WebsiteBucket
+    Description: S3 bucket to hold website content
+  DomainName:
+    Value: !GetAtt [FrontDistribution, DomainName]
+    Description: DomainName of Cloudfront distribution

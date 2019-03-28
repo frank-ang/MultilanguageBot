@@ -18,6 +18,9 @@ Parameters:
     Type: String
     Description: the Amazon Resource Name (ARN) of an AWS Certificate Manager (ACM) certificate.
     AllowedPattern: "arn:aws:acm:.*"
+  BotApiEndpoint:
+    Type: String
+    Description: Bot API regional endpoint, e.g. "*.execute-api.*.amazonaws.com".
 
 Resources:
 
@@ -43,12 +46,7 @@ Resources:
           Action: s3:GetObject
           Resource: !Join ['', ['arn:aws:s3:::', !Ref 'WebsiteBucket', /*]]
 
-  OriginAccessIdentity:
-    Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
-    Properties:
-      CloudFrontOriginAccessIdentityConfig:
-        Comment: "Cloudfront to S3 origin access identity"
-
+  ## Static Cloudfront Distribution ##
   WebsiteCloudfront:
     Type: AWS::CloudFront::Distribution
     DependsOn:
@@ -58,23 +56,32 @@ Resources:
       CacheBehavior:
         DefaultTTL: 15
       DistributionConfig:
-        Comment: Cloudfront Distribution pointing to S3 bucket
+        Comment: Bot Website
         Origins:
-        - DomainName: !Select [2, !Split ["/", !GetAtt WebsiteBucket.WebsiteURL]]
+        - DomainName: !GetAtt WebsiteBucket.DomainName
           Id: S3Origin
           S3OriginConfig:
             OriginAccessIdentity: !Sub "origin-access-identity/cloudfront/${OriginAccessIdentity}"
           CustomOriginConfig:
+          #  HTTPPort: '80'
+          #  HTTPSPort: '443'
+            OriginProtocolPolicy: http-only
+        - DomainName: !Select [2, !Split ["/", !Ref BotApiEndpoint]] #"5q5qjlic60.execute-api.us-east-1.amazonaws.com" #!Ref 'BotApiEndpoint' TODO split URL>>> !Select [2, !Split ["/", !Ref BotApiEndpoint]]
+          Id: ApiOrigin
+          CustomOriginConfig:
             HTTPPort: '80'
             HTTPSPort: '443'
-            OriginProtocolPolicy: http-only
+            OriginSSLProtocols:
+              - TLSv1.1
+              - TLSv1.2
+              - SSLv3
         Enabled: true
         HttpVersion: 'http2'
         DefaultRootObject: index.html
         Aliases:
         - !Ref 'FullDomainName'
-        DefaultCacheBehavior:
-          AllowedMethods:
+        CacheBehaviors:
+        - AllowedMethods:
           - GET
           - HEAD
           Compress: true
@@ -84,11 +91,30 @@ Resources:
             Cookies:
               Forward: none
           ViewerProtocolPolicy: redirect-to-https
+          PathPattern: '*'
+          DefaultTTL: 15
+        - AllowedMethods:
+          - GET
+          - HEAD
+          - OPTIONS
+          - POST
+          TargetOriginId: ApiOrigin
+          ForwardedValues:
+            QueryString: true
+          ViewerProtocolPolicy: redirect-to-https
+          PathPattern: /PROD/MultilanguageBot*
         PriceClass: PriceClass_All
         ViewerCertificate:
           AcmCertificateArn: !Ref AcmCertificateArn
           SslSupportMethod: sni-only
 
+  OriginAccessIdentity:
+    Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
+    Properties:
+      CloudFrontOriginAccessIdentityConfig:
+        Comment: "Cloudfront to S3 origin access identity"
+
+  ## Route 53 ##
   WebsiteDNSName:
     Type: AWS::Route53::RecordSetGroup
     Properties:
