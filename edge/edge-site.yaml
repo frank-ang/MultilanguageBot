@@ -6,12 +6,12 @@ Parameters:
 
   DomainName:
     Type: String
-    Description: The DNS name of an existing Amazon Route 53 hosted zone e.g. jevsejev.io
+    Description: The DNS name of an existing Amazon Route 53 hosted zone.
     AllowedPattern: (?!-)[a-zA-Z0-9-.]{1,63}(?<!-)
     ConstraintDescription: must be a valid DNS zone name.
   FullDomainName:
     Type: String
-    Description: The full domain name e.g. www.jevsejev.io
+    Description: The full domain name.
     AllowedPattern: (?!-)[a-zA-Z0-9-.]{1,63}(?<!-)
     ConstraintDescription: must be a valid DNS zone name.
   AcmCertificateArn:
@@ -20,7 +20,8 @@ Parameters:
     AllowedPattern: "arn:aws:acm:.*"
   BotApiEndpoint:
     Type: String
-    Description: Bot API regional endpoint, e.g. "*.execute-api.*.amazonaws.com".
+    Description: Bot API regional endpoint.
+    AllowedPattern: ".*execute-api.*amazonaws.com.*"
 
 Resources:
 
@@ -54,18 +55,24 @@ Resources:
     - OriginAccessIdentity
     Properties:
       DistributionConfig:
+        Aliases: 
+          - !Ref FullDomainName
         Comment: Bot Website
         Enabled: "true"
         DefaultRootObject: index.html
+        ViewerCertificate:
+          AcmCertificateArn: !Ref AcmCertificateArn
+          SslSupportMethod: sni-only
         # The default caching applies to the default (root) objects, not to images etc...
         DefaultCacheBehavior:
+          TargetOriginId: myS3Origin
           AllowedMethods:
           - GET
           - HEAD
+          - OPTIONS
           MinTTL: "0"
           MaxTTL: "0"
           DefaultTTL: "0"
-          TargetOriginId: myAPIOrigin
           ForwardedValues:
             QueryString: 'true'
             Cookies:
@@ -73,18 +80,23 @@ Resources:
           ViewerProtocolPolicy: redirect-to-https
         # Define two behaviours of how we cache responses
         CacheBehaviors:
-        - AllowedMethods:
-          - GET
+        - TargetOriginId: myAPIOrigin
+          # TODO test fix hardcoding, parse path from URL: '/PROD/MultilanguageBot*'
+          PathPattern: !Select [1, !Split ["amazonaws.com", !Ref BotApiEndpoint]]
+          AllowedMethods:
           - HEAD
+          - DELETE
+          - POST
+          - GET
           - OPTIONS
-          TargetOriginId: myS3Origin
+          - PUT
+          - PATCH
           ForwardedValues:
             QueryString: "false"
           ViewerProtocolPolicy: https-only
           MinTTL: "0"
           MaxTTL: "6"
           DefaultTTL: "3"
-          PathPattern: *
         Origins:
           # Origin from S3 website
           - Id: myS3Origin

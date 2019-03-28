@@ -39,7 +39,7 @@ Note that the default OrderFlowers Bot only understands US English. We will now 
 
 ### 2. Create Cognito stack
 
-Cloudformation Template: [cognito/cognito-cfn.yaml]()
+Cloudformation Template: [cognito/cognito-cfn.yaml](cognito/cognito-cfn.yaml)
 
 A standalone Cognito stack with one test user. 
 
@@ -79,11 +79,11 @@ aws cognito-idp admin-respond-to-auth-challenge --user-pool-id $USER_POOL_ID --c
 
 The design decision to park the identiy resource into its own stack, is because of reusability and separation of concerns. Identity stores should have their own lifecycle separate from the apps they support. You also have the option of replacing this stack with your own existing UserPool, though of course you will need to edit the Bot Cloudformation template file and resolve any broken references. 
 
-Other Cognito notes here: [cognito/README.md]()
+Other Cognito notes here: [cognito/README.md](cognito/README.md)
 
 ### 3. Create Multilanguage API stack
 
-SAM template: [MultilanguageBot.yaml]()
+SAM template: [MultilanguageBot.yaml](MultilanguageBot.yaml)
 
 Creates the main translator API stack. The Bot stack creates a BotTranslator Lambda function and API Gateway endpoint. IAM permissions are setup to permit calls to Translate and Lex. It has a cross-stack resource dependency on the Cognito stack.
 
@@ -99,7 +99,6 @@ S3_BUCKET=CHANGE_ME
 sam package --template-file MultilanguageBot.yaml --s3-bucket $S3_BUCKET --output-template-file ./samOutput.yaml.gitignore
 
 aws cloudformation deploy --capabilities CAPABILITY_IAM --template-file ./samOutput.yaml.gitignore --parameter-overrides "CognitoStackName=$COGNITO_STACK_NAME" --stack-name $REPLACE_ME
-
 ```
 
 ### 4. Create Edge stack
@@ -129,7 +128,7 @@ Deployment of actual web content is left to the pipeline, see next.
 
 Deploys S3 website content and Lambda API updates from GitHub source.
 
-CloudFormation template[pipeline/pipeline.yaml]()
+CloudFormation template[pipeline/pipeline.yaml](pipeline/pipeline.yaml)
 
 #### 5.1. Setup parameters.
 
@@ -166,7 +165,6 @@ aws cloudformation deploy --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM --t
  --parameter-overrides \
  "GitHubRepo=MultilanguageBot"  \
  "GitHubBranch=master" \
- "GitHubToken=CHANGEME" \
  "GitHubUser=CHANGEME" \
  "WebsiteBucket=CHANGEME" \
  "IdentityPoolId=CHANGE_ME" \
@@ -175,9 +173,6 @@ aws cloudformation deploy --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM --t
  "ApiUrl=CHANGE_ME" \
 --stack-name CHANGEME
 ```
-For GitHubToken, this is the OAuth token. Go to https://github.com/settings/tokens 
-
-
 
 #### Parameter Store
 
@@ -273,18 +268,16 @@ Delete the stacks.
 
 ## Known Limitations
 
-Missing features:
-
-* Monitoring stack, TODO
-* SSM Parameter store, WIP
-* Web Application Firewall, TODO
-
-Other limitations:
-
 * Deletion of Pipeline stack fails when unable to delete a non-empty S3 bucket containing pipeline artifacts from previous deployments.
 
 * The solution is a nïeve implementation that seems to work for the majority of cases similar to the example Lex bots. Perhaps someone with a linguistics background might be able to identify potential edge cases of semantic mistranslations. Perhaps some Mechanical Turk testing could verify the quality of the bot by human native speaker testers.
 
+### Backlog features:
+
+1. Top-level Cloudformation stack creating nested stacks
+2. Monitoring stack
+3. Canary tests, multilanguage
+4. Integration tests, multilanguage
 
 ## Contributing
  
