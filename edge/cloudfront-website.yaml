@@ -54,6 +54,9 @@ Resources:
     DependsOn:
     - WebsiteBucket
     Properties:
+      # TODO: short TTL for debugging
+      CacheBehavior:
+        DefaultTTL: 15
       DistributionConfig:
         Comment: Cloudfront Distribution pointing to S3 bucket
         Origins:

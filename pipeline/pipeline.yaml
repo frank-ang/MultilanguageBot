@@ -4,9 +4,6 @@ Parameters:
   GitHubBranch:
     Type: String
     Default: 'master'
-  GitHubToken:
-    Type: String
-    # TODO change to use SSM parameter store
   GitHubUser:
     Type: String
   WebsiteBucket:
@@ -19,14 +16,6 @@ Parameters:
     Type: String
   ApiUrl:
     Type: String
-  TestUserName:
-    Type: String
-    Default: user01
-    # TODO change to use SSM parameter store
-  TestUserCred:
-    Type: String
-    Default: Xoyxoz123.
-    # TODO change to use SSM parameter store
 
 Resources:
 
@@ -39,7 +28,7 @@ Resources:
     Type: AWS::CodePipeline::Pipeline
     Properties:
       RoleArn: !GetAtt CodePipelineServiceRole.Arn
-      ArtifactStore:
+      ArtifactStore: 
         Type: S3
         Location: !Ref ArtifactBucket
       Stages:
@@ -55,7 +44,7 @@ Resources:
                 Owner: !Ref GitHubUser
                 Repo: !Ref GitHubRepo
                 Branch: !Ref GitHubBranch
-                OAuthToken: !Ref GitHubToken
+                OAuthToken: '{{resolve:secretsmanager:bot.multilanguage.GitHubToken::::}}'
               OutputArtifacts:
                 - Name: SourceArtifact
               RunOrder: 1
@@ -109,11 +98,9 @@ Resources:
           - Name: API_URL
             Value: !Ref ApiUrl
           - Name: TEST_USER_NAME
-            Value: !Ref TestUserName
-            # TODO: use SSM parameter store
+            Value: '{{resolve:ssm:bot.multilanguage.TestUserName:1}}'
           - Name: TEST_USER_CRED
-            Value: !Ref TestUserCred
-            # TODO: use SSM parameter store
+            Value: '{{resolve:secretsmanager:bot.multilanguage.TestUserCred::::}}'
 
   ## Roles ##
 
