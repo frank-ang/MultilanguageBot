@@ -24,16 +24,16 @@ Parameters:
 
 Resources:
 
+  # Empty Bucket to hold static stuff
   WebsiteBucket:
     Type: AWS::S3::Bucket
     Properties:
       BucketName: !Ref 'FullDomainName'
-      AccessControl: Private
+      AccessControl: Private # Access via CloudFront CDN only.
       WebsiteConfiguration:
         IndexDocument: index.html
-        # ErrorDocument: 404.html
-    DeletionPolicy: Retain
 
+  ## Specifying the policies to make sure all files inside the Bucket are avaialble to CloudFront
   WebsiteBucketPolicy:
     Type: AWS::S3::BucketPolicy
     Properties:
@@ -44,69 +44,58 @@ Resources:
           Effect: Allow
           Principal: '*'
           Action: s3:GetObject
-          Resource: !Join ['', ['arn:aws:s3:::', !Ref 'WebsiteBucket', /*]]
+          Resource: !Sub 'arn:aws:s3:::${WebsiteBucket}/*'
 
-  ## Static Cloudfront Distribution ##
-  WebsiteCloudfront:
+  # Cloudfront distribution, that wraps the API Gateway, and the S3 bucket, as different origins
+  FrontDistribution:
     Type: AWS::CloudFront::Distribution
     DependsOn:
     - WebsiteBucket
+    - OriginAccessIdentity
     Properties:
-      # TODO: short TTL for debugging
-      #DefaultCacheBehavior:
-      #  DefaultTTL: 15
       DistributionConfig:
         Comment: Bot Website
-        Origins:
-        - DomainName: !GetAtt WebsiteBucket.DomainName
-          Id: S3Origin
-          S3OriginConfig:
-            OriginAccessIdentity: !Sub "origin-access-identity/cloudfront/${OriginAccessIdentity}"
-          CustomOriginConfig:
-          #  HTTPPort: '80'
-          #  HTTPSPort: '443'
-            OriginProtocolPolicy: http-only
-        - DomainName: !Select [2, !Split ["/", !Ref BotApiEndpoint]] #"5q5qjlic60.execute-api.us-east-1.amazonaws.com" #!Ref 'BotApiEndpoint' TODO split URL>>> !Select [2, !Split ["/", !Ref BotApiEndpoint]]
-          Id: ApiOrigin
-          CustomOriginConfig:
-            HTTPPort: '80'
-            HTTPSPort: '443'
-            OriginSSLProtocols:
-              - TLSv1.1
-              - TLSv1.2
-              - SSLv3
-        Enabled: true
-        HttpVersion: 'http2'
+        Enabled: "true"
         DefaultRootObject: index.html
-        Aliases:
-        - !Ref 'FullDomainName'
+        # The default caching applies to the default (root) objects, not to images etc...
+        DefaultCacheBehavior:
+          AllowedMethods:
+          - GET
+          - HEAD
+          MinTTL: "0"
+          MaxTTL: "0"
+          DefaultTTL: "0"
+          TargetOriginId: myAPIOrigin
+          ForwardedValues:
+            QueryString: 'true'
+            Cookies:
+              Forward: all
+          ViewerProtocolPolicy: redirect-to-https
+        # Define two behaviours of how we cache responses
         CacheBehaviors:
         - AllowedMethods:
           - GET
           - HEAD
-          Compress: true
-          TargetOriginId: S3Origin
-          ForwardedValues:
-            QueryString: true
-            Cookies:
-              Forward: none
-          ViewerProtocolPolicy: redirect-to-https
-          PathPattern: '*'
-          DefaultTTL: 15
-        - AllowedMethods:
-          - GET
-          - HEAD
           - OPTIONS
-          - POST
-          TargetOriginId: ApiOrigin
+          TargetOriginId: myS3Origin
           ForwardedValues:
-            QueryString: true
-          ViewerProtocolPolicy: redirect-to-https
-          PathPattern: /PROD/MultilanguageBot*
-        PriceClass: PriceClass_All
-        ViewerCertificate:
-          AcmCertificateArn: !Ref AcmCertificateArn
-          SslSupportMethod: sni-only
+            QueryString: "false"
+          ViewerProtocolPolicy: https-only
+          MinTTL: "0"
+          MaxTTL: "6"
+          DefaultTTL: "3"
+          PathPattern: *
+        Origins:
+          # Origin from S3 website
+          - Id: myS3Origin
+            DomainName: !GetAtt WebsiteBucket.DomainName
+            S3OriginConfig:
+              OriginAccessIdentity: !Sub "origin-access-identity/cloudfront/${OriginAccessIdentity}"
+          # Origin from API Gateway
+          - Id: myAPIOrigin
+            DomainName: !Select [2, !Split ["/", !Ref BotApiEndpoint]]
+            CustomOriginConfig:
+              OriginProtocolPolicy: https-only
 
   OriginAccessIdentity:
     Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
@@ -126,15 +115,12 @@ Resources:
           # Cloudfront hosted zone is hardcoded. Obscure docs:
           # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-route53-aliastarget.html 
           HostedZoneId: Z2FDTNDATAQYW2
-          DNSName: !GetAtt [WebsiteCloudfront, DomainName]
+          DNSName: !GetAtt [FrontDistribution, DomainName]
 
 Outputs:
   BucketName:
-    Value: !Ref 'WebsiteBucket'
-    Description: Name of S3 bucket to hold website content
-  CloudfrontEndpoint:
-    Value: !GetAtt [WebsiteCloudfront, DomainName]
-    Description: Endpoint for Cloudfront distribution
-  FullDomain:
-    Value: !Ref 'FullDomainName'
-    Description: Full DomainName
+    Value: !Ref WebsiteBucket
+    Description: S3 bucket to hold website content
+  DomainName:
+    Value: !GetAtt [FrontDistribution, DomainName]
+    Description: DomainName of Cloudfront distribution

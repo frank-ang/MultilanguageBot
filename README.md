@@ -49,7 +49,7 @@ A standalone Cognito stack with one test user.
 Replace ```TestUserEmail``` parameter with a valid email address, A temporary password will be emailed to you.
 
 ```
-EMAIL=frankang+changeme@amazon.com
+EMAIL=CHANGE_ME
 
 aws cloudformation deploy --capabilities CAPABILITY_IAM --template-file ./cognito-cfn.yaml  --parameter-overrides "TestUserEmail=$EMAIL" --stack-name CognitoTestStack03
 ```
@@ -89,10 +89,12 @@ Creates the main translator API stack. The Bot stack creates a BotTranslator Lam
 
 Package SAM template into a CloudFormation template, then Deploy the stack.
 
+(TODO: actually with the pipeline stack automating the following, is this step for a first-deploy even necessary?)
+
 ```
 # Update these paramters:
-COGNITO_STACK_NAME=CognitoTestStack03
-S3_BUCKET=sandbox01-demo-iad
+COGNITO_STACK_NAME=CHANGE_ME
+S3_BUCKET=CHANGE_ME
 
 sam package --template-file MultilanguageBot.yaml --s3-bucket $S3_BUCKET --output-template-file ./samOutput.yaml.gitignore
 
@@ -102,7 +104,12 @@ aws cloudformation deploy --capabilities CAPABILITY_IAM --template-file ./samOut
 
 ### 4. Create Edge stack
 
-This is the S3 website hosting the botui.js web client. This stack creates the S3, Route53, and CloudFront resources. 
+This is the Cloudfront distribution fronting the origins of:
+
+* S3 static website 
+* API Gateway endpoint
+
+A Route53 record is also created. 
 
 CloudFormation template: [edge/cloudfront-website.yaml]()
 
