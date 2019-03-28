@@ -112,6 +112,7 @@ aws cloudformation deploy --capabilities CAPABILITY_IAM \
 --parameter-overrides "DomainName=$REPLACE_ME" \
 --parameter-overrides "FullDomainName=$REPLACE_ME" \
 --parameter-overrides "AcmCertificateArn=$REPLACE_ME" \
+--parameter-overrides "CognitoStackName=$REPLACE_ME" \
 --stack-name $REPLACE_ME
 ``` 
 

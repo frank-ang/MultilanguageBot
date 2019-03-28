@@ -16,6 +16,10 @@ Parameters:
     Type: String
   ApiUrl:
     Type: String
+  BotApiStackName:
+    Type: String
+  CognitoStackName:
+    Type: String
 
 Resources:
 
@@ -35,6 +39,7 @@ Resources:
         - Name: Source
           Actions:
             - Name: App
+              RunOrder: 1
               ActionTypeId:
                 Category: Source
                 Owner: ThirdParty
@@ -47,10 +52,10 @@ Resources:
                 OAuthToken: '{{resolve:secretsmanager:bot.multilanguage.GitHubToken::::}}'
               OutputArtifacts:
                 - Name: SourceArtifact
-              RunOrder: 1
         - Name: Build
           Actions:
             - Name: Build
+              RunOrder: 2
               ActionTypeId:
                 Category: Build
                 Owner: AWS
@@ -62,9 +67,30 @@ Resources:
                 - Name: SourceArtifact
               OutputArtifacts:
                 - Name: BuildOutput
-              RunOrder: 2
+        - Name: Deploy
+          Actions:
+            - Name: Deploy
+              RunOrder: 3
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Version: 1
+                Provider: CloudFormation
+              Configuration:
+                ActionMode: CHANGE_SET_REPLACE
+                RoleArn: !GetAtt [CloudFormationExecutionRole, Arn]
+                StackName: !Sub "${BotApiStackName}"
+                ChangeSetName: !Sub "${BotApiStackName}"
+                TemplatePath: BuildOutput::outputSamTemplate.yaml
+                Capabilities: CAPABILITY_IAM
+                ParameterOverrides: !Sub |
+                  {
+                    "CognitoStackName": "${CognitoStackName}"
+                  }
+              InputArtifacts:
+                - Name: BuildOutput
 
-  ## Build. ##
+  ## Code Build. ##
   CodeBuildProject:
     DependsOn: ArtifactBucket
     Type: AWS::CodeBuild::Project
@@ -102,7 +128,7 @@ Resources:
           - Name: TEST_USER_CRED
             Value: '{{resolve:secretsmanager:bot.multilanguage.TestUserCred::::}}'
 
-  ## Roles ##
+  ## IAM Roles ##
 
   CloudFormationExecutionRole:
     Type: AWS::IAM::Role
@@ -128,6 +154,18 @@ Resources:
                   - s3:*
                   - cloudwatch:*
                   - iam:*
+                  - lambda:*
+                  - apigateway:*
+                  - iam:*Role
+                  - iam:*RolePolicy
+                  - cloudformation:CreateChangeSet
+                  - codedeploy:CreateApplication
+                  - codedeploy:DeleteApplication
+                  - codedeploy:RegisterApplicationRevision
+                  - codedeploy:CreateDeploymentGroup
+                  - codedeploy:CreateDeployment
+                  - codedeploy:GetDeployment
+                  - codedeploy:GetDeploymentConfig
 
   CodeBuildServiceRole:
     Type: AWS::IAM::Role
