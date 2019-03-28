@@ -28,7 +28,7 @@ Resources:
       AccessControl: Private
       WebsiteConfiguration:
         IndexDocument: index.html
-        ErrorDocument: 404.html
+        # ErrorDocument: 404.html
     DeletionPolicy: Retain
 
   WebsiteBucketPolicy:
@@ -54,6 +54,9 @@ Resources:
     DependsOn:
     - WebsiteBucket
     Properties:
+      # TODO: short TTL for debugging
+      CacheBehavior:
+        DefaultTTL: 15
       DistributionConfig:
         Comment: Cloudfront Distribution pointing to S3 bucket
         Origins:

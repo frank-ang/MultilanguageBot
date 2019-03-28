@@ -4,9 +4,17 @@ Parameters:
   GitHubBranch:
     Type: String
     Default: 'master'
-  GitHubToken:
-    Type: String
   GitHubUser:
+    Type: String
+  WebsiteBucket:
+    Type: String
+  IdentityPoolId:
+    Type: String
+  UserPoolId: 
+    Type: String
+  UserPoolClientID: 
+    Type: String
+  ApiUrl:
     Type: String
 
 Resources:
@@ -14,13 +22,13 @@ Resources:
   ArtifactBucket:
     Type: AWS::S3::Bucket
 
-  ## Main pipeline stages ##
+  ## Main pipeline and stages ##
   Pipeline:
-    
+    DependsOn: ArtifactBucket
     Type: AWS::CodePipeline::Pipeline
     Properties:
       RoleArn: !GetAtt CodePipelineServiceRole.Arn
-      ArtifactStore:
+      ArtifactStore: 
         Type: S3
         Location: !Ref ArtifactBucket
       Stages:
@@ -35,9 +43,8 @@ Resources:
               Configuration:
                 Owner: !Ref GitHubUser
                 Repo: !Ref GitHubRepo
-                # PollForSourceChanges: false
                 Branch: !Ref GitHubBranch
-                OAuthToken: !Ref GitHubToken
+                OAuthToken: '{{resolve:secretsmanager:bot.multilanguage.GitHubToken::::}}'
               OutputArtifacts:
                 - Name: SourceArtifact
               RunOrder: 1
@@ -57,11 +64,50 @@ Resources:
                 - Name: BuildOutput
               RunOrder: 2
 
+  ## Build. ##
+  CodeBuildProject:
+    DependsOn: ArtifactBucket
+    Type: AWS::CodeBuild::Project
+ 
+    Properties:
+      Name: !Sub ${AWS::StackName}-build
+      Description: Builds SAM template and updates S3 website
+      ServiceRole: !Ref CodeBuildServiceRole 
+
+      Source:
+        Type: CODEPIPELINE
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        ComputeType: "BUILD_GENERAL1_SMALL"
+        Image: "aws/codebuild/python:3.6.5"
+        Type: "LINUX_CONTAINER"
+        EnvironmentVariables:
+          - Name: ARTIFACT_BUCKET
+            Value: !Ref ArtifactBucket
+          - Name: WEBSITE_BUCKET
+            Value: !Ref WebsiteBucket
+          - Name: REGION
+            Value: !Sub ${AWS::Region}
+          - Name: IDENTITY_POOL_ID
+            Value: !Ref IdentityPoolId
+          - Name: USER_POOL_ID
+            Value: !Ref UserPoolId
+          - Name: USER_POOL_CLIENT_ID
+            Value: !Ref UserPoolClientID
+          - Name: API_URL
+            Value: !Ref ApiUrl
+          - Name: TEST_USER_NAME
+            Value: '{{resolve:ssm:bot.multilanguage.TestUserName:1}}'
+          - Name: TEST_USER_CRED
+            Value: '{{resolve:secretsmanager:bot.multilanguage.TestUserCred::::}}'
+
   ## Roles ##
+
   CloudFormationExecutionRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub ${AWS::StackName}-cfn-exec-role
+      RoleName: !Sub ${AWS::StackName}-cfn-exec
       Path: /
       AssumeRolePolicyDocument: |
         {
@@ -107,11 +153,19 @@ Resources:
                   - logs:CreateLogGroup
                   - logs:CreateLogStream
                   - logs:PutLogEvents
+                  - cloudformation:*
               - Resource: !Sub arn:aws:s3:::${ArtifactBucket}/*
                 Effect: Allow
                 Action:
                   - s3:GetObject
                   - s3:PutObject
+                  - s3:GetObjectVersion
+              - Resource: !Sub arn:aws:s3:::${WebsiteBucket}/*
+                Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:PutObjectAcl
                   - s3:GetObjectVersion
 
   CodePipelineServiceRole:
@@ -147,27 +201,6 @@ Resources:
                   - codebuild:BatchGetBuilds
                   - cloudformation:*
                   - iam:PassRole
-
-#Invalid project source: source location must be a valid GitHub repository URL
-  CodeBuildProject:
-    Type: AWS::CodeBuild::Project
- 
-    Properties:
-      Name: !Sub ${AWS::StackName}
-      Description: !Sub Build project for SAM template and S3
-      ServiceRole: !Ref CodeBuildServiceRole 
-
-      Source:
-        Type: CODEPIPELINE
-      Artifacts:
-        Type: "CODEPIPELINE"
-      Environment:
-        ComputeType: "BUILD_GENERAL1_SMALL"
-        Image: "aws/codebuild/python:3.6.5"
-        Type: "LINUX_CONTAINER"
-        EnvironmentVariables:
-          - Name: GITHUB_TOKEN_REMOVE_ME
-            Value: !Ref GitHubToken
 
 Outputs:
   PipelineUrl:

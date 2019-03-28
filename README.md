@@ -8,16 +8,13 @@ The solution deploys a tranlation layer in front of the example Order Flowers Am
 
 ![Multilanguage Chatbot architecture](doc/architecture.png) 
 
-The environment is defined in a SAM template: [MultilanguageBot.yaml](). 
+The environment setup with the following Cloudformation templates:
 
-TODO: split up into multiple CFN templates:
-* ./MultilanguageBot.yaml
-* cognito/cognito-cfn.yaml
-* TODO/website.yaml
-* TODO/pipeline.yaml
-  ** TODO: codebuild with environment variables.
-
-The solution is a nïeve implementation. Perhaps someone with a linguistics background might be able to identify potential edge cases of semantic mistranslations. Perhaps some Mechanical Turk testing could verify the quality of the bot by human native speaker testers (TODO potential enhancement).
+* Identity Stack. Cognito UserPool and a test user. [cognito/cognito-cfn.yaml]()
+* Multilanguage Bot Stack. API Gateway and Lambda function defined in a SAM template. [MultilanguageBot.yaml]()
+* Edge Stack. S3 website with CloudFront distribution and Route 53 DNS hostname entry for the site [edge/cloudfront-website.yaml]()
+* Pipeline Stack. Deploys [pipeline/pipeline.yaml]()
+* Metrics: TODO
 
 ### User Experience
 
@@ -25,60 +22,183 @@ A sample [BotUI](https://botui.org/) user interface is provided. The following i
 
 ![Mixing Chinese and Indonesian in session](doc/botui-session.png) 
 
-### Cross-origin resource sharing (CORS)
+#### Cross-origin resource sharing (CORS)
 
-The CORS browser security restriction arises from the fact that the S3 website endpoint and API Gateway endpoint have different DNS domain names.
+A browser-side CORS security restriction arises if the browser needs to interact with an S3 website endpoint and an API Gateway, each with different endpoint endpoint domain names.
 
-To get around this, and to avoid fiddling with configuring CORS on API Gateway and Lambda, the approach used in this solution utilizes a common CloudFront distribution in front of both the S3 website and the API Gateway endpoint. 
+The approach used in this solution avoids this CORS problem by utilizing a single front hostname resolving to a CloudFront distribution that routes to the S3 website and the API Gateway "backend" endpoints. This way, the browser only connects into a single hostname. 
 
-Have not investigated what is the way for CloudFormation to setup CORS on API GW Regional Endpoint.
+One alternative approach would be configuring CORS on API Gateway.
 
 ## Installation
 
-#### 1. Create a Lex Bot: 
- * Create the default "OrderFlowers" example using a blueprint. [https://docs.aws.amazon.com/lex/latest/dg/gs-bp-create-bot.html]()
+### 1. Create a Lex Bot: 
+Create the default "OrderFlowers" example from the blueprint. [https://docs.aws.amazon.com/lex/latest/dg/gs-bp-create-bot.html]()
 
-### 2. Create Cognito resources
+Note that the default OrderFlowers Bot only understands US English. We will now give it a translator.
 
-Create the Cognito stack. This is a standalone stack, and Cognito resources would be referenced cross-stack from the Bot stack. 
+### 2. Create Cognito stack
 
-Steps:
+Cloudformation Template: [cognito/cognito-cfn.yaml]()
 
-* create Cognito stack [cognito/cognito-cfn.yaml]()
-* create Cognito user [cognito/README.md]()
+A standalone Cognito stack with one test user. 
 
-Identity systems are shared across apps, so its possible to use an existing Cognito stack, you probably need to edit the Bot Cloudformation template to resolve any broken references. 
+#### 2.1. Deploy the Cognito stack. 
 
 
-### 3. Create Multilanguage API resources
+Replace ```TestUserEmail``` parameter with a valid email address, A temporary password will be emailed to you.
 
-Create the main Bot stack. This has dependencies on the Cognito stack and makes cross-stack resource references, instead of stack nesting.
+```
+EMAIL=frankang+changeme@amazon.com
 
-The Bot stack creates a BotTranslator Lambda function and API Gateway endpoint. IAM permissions are setup to permit calls to Comprehend, Translate, and Lex. 
+aws cloudformation deploy --capabilities CAPABILITY_IAM --template-file ./cognito-cfn.yaml  --parameter-overrides "TestUserEmail=$EMAIL" --stack-name CognitoTestStack03
+```
+
+#### 2.2. Confirm the test user 
+
+The stack creates one demo user for the demo web GUI. The demo user is initially in ```FORCE_CHANGE_PASSWORD``` state, and the temporary password will be emailed to the provided ```TestUserEmail``` email address.
+
+Initiate auth on behalf of the user. First lets set some properties:
+
+```
+# Fill in values for your environment:
+USER_POOL_ID=
+APP_CLIENT_ID=
+USERNAME=
+CURRENT_PASSWORD=
+DESIRED_PASSWORD=
+BOT_URL=
+```
+Next, authenticate administratively with the user temp password, to get a session key.
+Then reset the password administratively. 
+```
+SESSION_KEY=`aws cognito-idp admin-initiate-auth --user-pool-id $USER_POOL_ID --client-id $APP_CLIENT_ID --auth-flow ADMIN_NO_SRP_AUTH --auth-parameters USERNAME=$USERNAME,PASSWORD=$CURRENT_PASSWORD | jq -r ".Session"`
+
+aws cognito-idp admin-respond-to-auth-challenge --user-pool-id $USER_POOL_ID --client-id $APP_CLIENT_ID --challenge-name NEW_PASSWORD_REQUIRED --challenge-responses NEW_PASSWORD=$DESIRED_PASSWORD,USERNAME=$USERNAME,userAttributes.name=$USERNAME --session $SESSION_KEY
+```
+
+The design decision to park the identiy resource into its own stack, is because of reusability and separation of concerns. Identity stores should have their own lifecycle separate from the apps they support. You also have the option of replacing this stack with your own existing UserPool, though of course you will need to edit the Bot Cloudformation template file and resolve any broken references. 
+
+Other Cognito notes here: [cognito/README.md]()
+
+### 3. Create Multilanguage API stack
 
 SAM template: [MultilanguageBot.yaml]()
 
-Package SAM template into a CloudFormation template, then Deploy the stack:
+Creates the main translator API stack. The Bot stack creates a BotTranslator Lambda function and API Gateway endpoint. IAM permissions are setup to permit calls to Translate and Lex. It has a cross-stack resource dependency on the Cognito stack.
 
-E.g.
+Package SAM template into a CloudFormation template, then Deploy the stack.
+
 ```
-# Change these paramters:
+# Update these paramters:
 COGNITO_STACK_NAME=CognitoTestStack03
 S3_BUCKET=sandbox01-demo-iad
 
 sam package --template-file MultilanguageBot.yaml --s3-bucket $S3_BUCKET --output-template-file ./samOutput.yaml.gitignore
 
-aws cloudformation deploy --capabilities CAPABILITY_IAM --template-file ./samOutput.yaml.gitignore --parameter-overrides "CognitoStackName=$COGNITO_STACK_NAME" --stack-name BotTestStack03
+aws cloudformation deploy --capabilities CAPABILITY_IAM --template-file ./samOutput.yaml.gitignore --parameter-overrides "CognitoStackName=$COGNITO_STACK_NAME" --stack-name $REPLACE_ME
 
 ```
 
-### 4. Web stack
+### 4. Create Edge stack
 
-This is the S3 website hosting the botui.js web client, with AuthN via Cognito. Upload of new S3 content performed by CodePipeline + CodeBuild.
+This is the S3 website hosting the botui.js web client. This stack creates the S3, Route53, and CloudFront resources. 
 
-Access the webpage from CloudFront.
+CloudFormation template: [edge/cloudfront-website.yaml]()
 
-TODO: add more details and create the child CFN stacks.
+```
+aws cloudformation deploy --capabilities CAPABILITY_IAM \
+--template-file ./cloudfront-website.yaml  \
+--parameter-overrides "DomainName=$REPLACE_ME" \
+--parameter-overrides "FullDomainName=$REPLACE_ME" \
+--parameter-overrides "AcmCertificateArn=$REPLACE_ME" \
+--stack-name $REPLACE_ME
+``` 
+
+Deployment of actual web content is left to the pipeline, see next. 
+
+### 5. Create Pipeline stack
+
+Deploys S3 website content and Lambda API updates from GitHub source.
+
+CloudFormation template[pipeline/pipeline.yaml]()
+
+#### 5.1. Setup parameters.
+
+Save sensitive data SSM and SecretsManager. Its a best-practice to externalize environment-specific parameters and secrets away from the code repo.
+
+```
+aws ssm put-parameter --name "bot.multilanguage.TestUserName" \
+          --description "Test user name" \
+          --value user01 \
+          --type String
+
+aws ssm put-parameter --name "bot.multilanguage.TestUserCred" \
+          --description "Test user cred" \
+          --value $REPLACE_ME \
+          --type String
+
+aws ssm get-parameter --name "bot.multilanguage.TestUserName"  --with-decryption
+
+aws secretsmanager create-secret --name bot.multilanguage.GitHubToken \
+    --description "Test user cred" \
+    --secret-string $REPLACE_ME
+
+aws secretsmanager create-secret --name bot.multilanguage.TestUserCred \
+    --description "Test user cred" \
+    --secret-string $REPLACE_ME
+
+aws secretsmanager get-secret-value --secret-id "bot.multilanguage.GitHubToken"
+```
+
+#### 5.2. Deploy the pipeline stack.
+
+```
+aws cloudformation deploy --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM --template-file ./pipeline.yaml \
+ --parameter-overrides \
+ "GitHubRepo=MultilanguageBot"  \
+ "GitHubBranch=master" \
+ "GitHubToken=CHANGEME" \
+ "GitHubUser=CHANGEME" \
+ "WebsiteBucket=CHANGEME" \
+ "IdentityPoolId=CHANGE_ME" \
+ "UserPoolId=CHANGE_ME" \
+ "UserPoolClientID=CHANGE_ME" \
+ "ApiUrl=CHANGE_ME" \
+--stack-name CHANGEME
+```
+For GitHubToken, this is the OAuth token. Go to https://github.com/settings/tokens 
+
+
+
+#### Parameter Store
+
+Use SSM Parameter Store to save configuration and secret strings. Its a good idea to externalize sensitive values away from your source code repository. Setup parameters for:
+
+* Github token to authorize your source repo. This is the OAuth token, see https://github.com/settings/tokens 
+* Test user and creds.
+
+```
+aws ssm put-parameter --name "bot.multilanguage.GitHubToken" \
+          --description "Github OAuth Token" \
+          --value CHANGE_ME \
+          --type SecureString
+
+aws ssm get-parameter --name "bot.multilanguage.GitHubToken"  --with-decryption
+
+aws ssm put-parameter --name "bot.multilanguage.TestUserName" \
+          --description "Test user name" \
+          --value user01 \
+          --type String
+
+aws ssm put-parameter --name "bot.multilanguage.TestUserCred" \
+          --description "Test user cred" \
+          --value CHANGE_ME \
+          --type SecureString
+```
+
+### 6. Setup Monitoring (TODO)
+
 
 ## API Testing
 
@@ -139,6 +259,24 @@ E.g.
   }
 }
 ```
+## Cleanup Steps
+
+Delete the stacks.
+
+## Known Limitations
+
+Missing features:
+
+* Monitoring stack, TODO
+* SSM Parameter store, WIP
+* Web Application Firewall, TODO
+
+Other limitations:
+
+* Deletion of Pipeline stack fails when unable to delete a non-empty S3 bucket containing pipeline artifacts from previous deployments.
+
+* The solution is a nïeve implementation that seems to work for the majority of cases similar to the example Lex bots. Perhaps someone with a linguistics background might be able to identify potential edge cases of semantic mistranslations. Perhaps some Mechanical Turk testing could verify the quality of the bot by human native speaker testers.
+
 
 ## Contributing
  
