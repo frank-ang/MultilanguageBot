@@ -1,3 +1,5 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Pipeline for Multilanguage Bot
 Parameters:
   GitHubRepo:
     Type: String
@@ -144,7 +146,7 @@ Resources:
             }]
         }
       Policies:
-        - PolicyName: root
+        - PolicyName: InlinePolicy
           PolicyDocument:
             Version: 2012-10-17
             Statement:
@@ -181,7 +183,7 @@ Resources:
             }]
         }
       Policies:
-        - PolicyName: root
+        - PolicyName: InlinePolicy
           PolicyDocument:
             Version: 2012-10-17
             Statement:
@@ -201,10 +203,14 @@ Resources:
               - Resource: !Sub arn:aws:s3:::${WebsiteBucket}/*
                 Effect: Allow
                 Action:
-                  - s3:GetObject
                   - s3:PutObject
                   - s3:PutObjectAcl
                   - s3:GetObjectVersion
+                  - s3:List*
+              - Resource: !Sub arn:aws:s3:::${WebsiteBucket}
+                Effect: Allow
+                Action:
+                  - s3:List*
 
   CodePipelineServiceRole:
     Type: AWS::IAM::Role

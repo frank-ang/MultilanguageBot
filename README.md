@@ -10,10 +10,14 @@ The solution deploys a tranlation layer in front of the example Order Flowers Am
 
 The environment setup with the following Cloudformation templates:
 
-* Identity Stack. Cognito UserPool and a test user. [cognito/cognito-cfn.yaml]()
-* Multilanguage Bot Stack. API Gateway and Lambda function defined in a SAM template. [MultilanguageBot.yaml]()
-* Edge Stack. S3 website with CloudFront distribution and Route 53 DNS hostname entry for the site [edge/cloudfront-website.yaml]()
-* Pipeline Stack. Deploys [pipeline/pipeline.yaml]()
+* Identity Stack. Cognito UserPool and a test user. 
+    [cognito/cognito-cfn.yaml](cognito/cognito-cfn.yaml)
+* Multilanguage Bot Stack. API Gateway and Lambda function defined in a SAM template. 
+    [MultilanguageBot.yaml](MultilanguageBot.yaml) 
+* Edge Stack. S3 website with CloudFront distribution and Route 53 DNS hostname entry for the site.
+    [edge/cloudfront-website.yaml](edge/cloudfront-website.yaml)
+* Pipeline Stack. Deploys website and multilanguage bot stack.
+    [pipeline/pipeline.yaml](pipeline/pipeline.yaml)
 * Metrics: TODO
 
 ### User Experience
@@ -33,7 +37,7 @@ One alternative approach would be configuring CORS on API Gateway.
 ## Installation
 
 ### 1. Create a Lex Bot: 
-Create the default "OrderFlowers" example from the blueprint. [https://docs.aws.amazon.com/lex/latest/dg/gs-bp-create-bot.html]()
+Create the default "OrderFlowers" example from the blueprint. [https://docs.aws.amazon.com/lex/latest/dg/gs-bp-create-bot.html](https://docs.aws.amazon.com/lex/latest/dg/gs-bp-create-bot.html)
 
 Note that the default OrderFlowers Bot only understands US English. We will now give it a translator.
 
@@ -112,11 +116,11 @@ This is the Cloudfront distribution fronting the origins of:
 
 A Route53 record is also created. 
 
-CloudFormation template: [edge/cloudfront-website.yaml]()
+CloudFormation template: [edge/edge-site.yaml](edge/edge-site.yaml)
 
 ```
 aws cloudformation deploy --capabilities CAPABILITY_IAM \
---template-file ./cloudfront-website.yaml  \
+--template-file ./edge-site.yaml  \
 --parameter-overrides "DomainName=$REPLACE_ME" \
 --parameter-overrides "FullDomainName=$REPLACE_ME" \
 --parameter-overrides "AcmCertificateArn=$REPLACE_ME" \
@@ -135,6 +139,12 @@ CloudFormation template[pipeline/pipeline.yaml](pipeline/pipeline.yaml)
 #### 5.1. Setup parameters.
 
 Save sensitive data SSM and SecretsManager. Its a best-practice to externalize environment-specific parameters and secrets away from the code repo.
+
+#### 5.1. Setup parameters.
+
+Save sensitive data SSM and SecretsManager. Its a best-practice to externalize environment-specific parameters and secrets away from the code repo.
+
+TODO: auto generate test secrets within CloudFormation.
 
 ```
 aws ssm put-parameter --name "bot.multilanguage.TestUserName" \
@@ -163,33 +173,6 @@ aws secretsmanager get-secret-value --secret-id "bot.multilanguage.GitHubToken"
 #### 5.2. Deploy the pipeline stack.
 
 CloudFormation template[pipeline/pipeline.yaml]()
-
-#### 5.1. Setup parameters.
-
-Save sensitive data SSM and SecretsManager. Its a best-practice to externalize environment-specific parameters and secrets away from the code repo.
-
-```
-aws ssm put-parameter --name "bot.multilanguage.TestUserName" \
-          --description "Test user name" \
-          --value user01 \
-          --type String
-
-aws ssm put-parameter --name "bot.multilanguage.TestUserCred" \
-          --description "Test user cred" \
-          --value $REPLACE_ME \
-          --type String
-
-aws ssm get-parameter --name "bot.multilanguage.TestUserName"  --with-decryption
-
-aws secretsmanager create-secret --name bot.multilanguage.GitHubToken \
-    --description "Test user cred" \
-    --secret-string $REPLACE_ME
-
-aws secretsmanager create-secret --name bot.multilanguage.TestUserCred \
-    --description "Test user cred" \
-    --secret-string $REPLACE_ME
-
-aws secretsmanager get-secret-value --secret-id "bot.multilanguage.GitHubToken"
 ```
 aws cloudformation deploy --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM --template-file ./pipeline.yaml \
  --parameter-overrides \
