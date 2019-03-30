@@ -6,9 +6,9 @@ Description: Cognito UserPool test stack for the Multilanguage Bot project.
 Parameters: 
 
   TestUserEmail:
+    Description: Email address for the test user for the demo web app. A temp password is sent to this email for user confirmation.
     Type: String
     Default: frankang+changeme@amazon.com
-    Description: Email address for the test user for the demo web app. A temp password is sent to this email for user confirmation.
 
 Resources:
 
@@ -47,7 +47,8 @@ Resources:
   MyIdentityPool:
     Type: "AWS::Cognito::IdentityPool"
     Properties:
-      IdentityPoolName: !Sub ${AWS::StackName}Identity
+      IdentityPoolName: !Join [ '', !Split ['-',  !Sub '${AWS::StackName}']]
+        # !Sub ${AWS::StackName}Identity
       AllowUnauthenticatedIdentities: true
       CognitoIdentityProviders: 
         - ClientId: !Ref MyUserPoolClient

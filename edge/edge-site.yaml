@@ -78,10 +78,9 @@ Resources:
             Cookies:
               Forward: all
           ViewerProtocolPolicy: redirect-to-https
-        # Define two behaviours of how we cache responses
+        # Define behaviours of how we cache responses
         CacheBehaviors:
         - TargetOriginId: myAPIOrigin
-          # TODO test fix hardcoding, parse path from URL: '/PROD/MultilanguageBot*'
           PathPattern: !Select [1, !Split ["amazonaws.com", !Ref BotApiEndpoint]]
           AllowedMethods:
           - HEAD

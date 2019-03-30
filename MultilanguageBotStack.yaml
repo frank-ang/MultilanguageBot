@@ -3,23 +3,21 @@ Description: Multilanguage Bot top level stack
 
 Parameters: 
 
-  CognitoStackName:
-    Description: FOO
+  TestUserEmail:
+    Description: Test email address for activation of the Cognito test user,. 
+      Its for the demo web app. A temp password is sent to this email for user confirmation.
     Type: String
-    AllowedPattern : "^[a-zA-Z][a-zA-Z0-9]*$"
 
 Resources:
 
   CognitoStack:
     Type: AWS::CloudFormation::Stack
     Properties:
+      TemplateURL: https://s3.amazonaws.com/multilanguage-bot/cognito/cognito-cfn.yaml
       Parameters:
-        AWS CloudFormation Stack Parameters
-      Tags:
-        - MultilanguageBot
-      TemplateURL: https://s3.amazonaws.com/.../TemplateName.extension
+        TestUserEmail: !Ref TestUserEmail
       TimeoutInMinutes: 3  
 
 Outputs:
-  BotUrl:
-    Value: !Ref FOO
+  CognitoThing:
+    Value: !Ref CognitoStack

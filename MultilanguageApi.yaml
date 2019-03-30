@@ -18,7 +18,7 @@ Resources:
   MultilanguageBotApi:
     Type: AWS::Serverless::Api
     Properties:
-      StageName: Prod
+      StageName: Test
       Cors: "'*'"
       Auth:
         DefaultAuthorizer: MyCognitoAuthorizer
