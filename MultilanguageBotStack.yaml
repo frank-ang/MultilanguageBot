@@ -7,17 +7,56 @@ Parameters:
     Description: Test email address for activation of the Cognito test user,. 
       Its for the demo web app. A temp password is sent to this email for user confirmation.
     Type: String
+  DomainName:
+    Description: DNS name of an existing Amazon Route 53 hosted zone.
+    Type: String   
+    AllowedPattern: (?!-)[a-zA-Z0-9-.]{1,63}(?<!-)
+    ConstraintDescription: must be a valid DNS zone name.
+  FullDomainName:
+    Description: Full domain name of the bot website.
+    Type: String
+    AllowedPattern: (?!-)[a-zA-Z0-9-.]{1,63}(?<!-)
+    ConstraintDescription: must be a valid DNS name for the website.
+  AcmCertificateArn:
+    Description: the Amazon Resource Name (ARN) of an AWS Certificate Manager (ACM) certificate.
+    Type: String
+    AllowedPattern: "arn:aws:acm:.*"
+  BotApiEndpoint:
+    Description: Bot API regional endpoint.
+    Type: String
+    AllowedPattern: ".*execute-api.*amazonaws.com.*"
 
 Resources:
 
-  CognitoStack:
+  Cognito:
     Type: AWS::CloudFormation::Stack
     Properties:
       TemplateURL: https://s3.amazonaws.com/multilanguage-bot/cognito/cognito-cfn.yaml
       Parameters:
         TestUserEmail: !Ref TestUserEmail
-      TimeoutInMinutes: 3  
+      TimeoutInMinutes: 3
+
+  Edge:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: https://s3.amazonaws.com/multilanguage-bot/edge/edge-site.yaml
+      Parameters:
+        DomainName: !Ref DomainName
+        FullDomainName: !Ref FullDomainName
+        AcmCertificateArn: !Ref AcmCertificateArn
+        BotApiEndpoint: !Ref BotApiEndpoint
+      # TimeoutInMinutes: 15
 
 Outputs:
-  CognitoThing:
-    Value: !Ref CognitoStack
+  UserPoolId:
+    Value: !GetAtt [Cognito, Outputs.UserPoolId]
+  UserPoolId:
+    Value: !GetAtt [Cognito, Outputs.UserPoolId]
+  UserPoolClientId:
+    Value: !GetAtt [Cognito, Outputs.UserPoolClientId]
+  IdentityPoolId:
+    Value: !GetAtt [Cognito, Outputs.IdentityPoolId]
+  BucketName:
+    Value: !GetAtt [Edge, Outputs.BucketName]
+  DomainName:
+    Value: !GetAtt [Edge, Outputs.DomainName]
