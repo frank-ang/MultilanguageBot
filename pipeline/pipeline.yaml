@@ -22,9 +22,12 @@ Parameters:
     Type: String
   CognitoStackName:
     Type: String
+  FrontDistribution:
+    Type: String
 
 Resources:
 
+  ## Bucket to cointain build artifacts ##
   ArtifactBucket:
     Type: AWS::S3::Bucket
 
@@ -83,7 +86,7 @@ Resources:
                 RoleArn: !GetAtt [CloudFormationExecutionRole, Arn]
                 StackName: !Sub "${BotApiStackName}"
                 ChangeSetName: !Sub "${BotApiStackName}"
-                TemplatePath: BuildOutput::outputSamTemplate.yaml
+                TemplatePath: BuildOutput::TranslatorBotApi-deployable.yaml
                 Capabilities: CAPABILITY_IAM
                 ParameterOverrides: !Sub |
                   {
@@ -94,7 +97,9 @@ Resources:
 
   ## Code Build. ##
   CodeBuildProject:
-    DependsOn: ArtifactBucket
+    DependsOn: 
+      - ArtifactBucket
+      - TestUserSecret
     Type: AWS::CodeBuild::Project
  
     Properties:
@@ -126,9 +131,21 @@ Resources:
           - Name: API_URL
             Value: !Ref ApiUrl
           - Name: TEST_USER_NAME
-            Value: '{{resolve:ssm:bot.multilanguage.TestUserName:1}}'
+            Value: !Join ['', ['{{resolve:secretsmanager:', !Ref bot.multilanguage.TestUserSecret, ':SecretString:username}}' ]]
           - Name: TEST_USER_CRED
-            Value: '{{resolve:secretsmanager:bot.multilanguage.TestUserCred::::}}'
+            Value: !Join ['', ['{{resolve:secretsmanager:', !Ref bot.multilanguage.TestUserSecret, ':SecretString:password}}' ]]
+
+  ## Random generated secret for test user, as JSON.
+  TestUserSecret:
+    Type: 'AWS::SecretsManager::Secret'
+    Properties:
+      Name: bot.multilanguage.TestUserSecret
+      Description: "This secret has a dynamically generated secret password."
+      GenerateSecretString:
+        SecretStringTemplate: '{"username": "user01"}'
+        GenerateStringKey: "password"
+        PasswordLength: 12
+        ExcludeCharacters: '"@/\'
 
   ## IAM Roles ##
 

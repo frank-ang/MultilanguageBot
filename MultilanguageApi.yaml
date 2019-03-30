@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: Multilanguage Bot.
+Description: SAM template for Multilanguage Bot API and Lambda function. Deploys via a pipeline.
 
 Parameters: 
 
@@ -9,6 +9,8 @@ Parameters:
     Type: String
     AllowedPattern : "^[a-zA-Z][a-zA-Z0-9]*$"
 
+  # TODO CloudFront ID.
+
 Resources:
   # Bot API
   # FYI, a good reference to setup Cognito Auth per API methods:
@@ -16,7 +18,7 @@ Resources:
   MultilanguageBotApi:
     Type: AWS::Serverless::Api
     Properties:
-      StageName: PROD
+      StageName: Prod
       Cors: "'*'"
       Auth:
         DefaultAuthorizer: MyCognitoAuthorizer

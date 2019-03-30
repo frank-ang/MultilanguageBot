@@ -18,8 +18,8 @@ phases:
   install:
     commands:
       # generate the SAM Template
-      - aws cloudformation package --template-file MultilanguageBot.yaml --s3-bucket ${ARTIFACT_BUCKET}
-                                   --output-template-file outputSamTemplate.yaml
+      - aws cloudformation package --template-file TranslatorBotApi.yaml --s3-bucket ${ARTIFACT_BUCKET}
+                                   --output-template-file TranslatorBotApi-deployable.yaml
       # Replace parameters in the website javascript config file.
       - sed -i -e "s/\('region'[[:space:]]*:\).*$/\1 '$REGION',/g" $JS_CONFIG_FILE
       - sed -i -e "s/\('identity_pool_id'[[:space:]]*:\).*$/\1 '$IDENTITY_POOL_ID',/g" $JS_CONFIG_FILE
@@ -39,4 +39,4 @@ phases:
 artifacts:
   type: zip
   files:
-    - outputSamTemplate.yaml
+    - TranslatorBotApi-deployable.yaml

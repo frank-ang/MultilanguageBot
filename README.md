@@ -2,7 +2,9 @@
 
 The Multilanguage Lex Bot example demonstrates a pattern to enable AWS customers to configure multilanguage conversational bot experiences across the 21 languages supported by Amazon Translate, overcoming the current US English monolingual limitation of Amazon Lex. 
 
-The solution deploys a tranlation layer in front of the example Order Flowers Amazon Lex bot. This simple pattern provides a way for Amazon Lex bots to converse in all 21 languages supported by Amazon Translate. 
+The solution deploys a tranlation layer in front of the example Order Flowers Amazon Lex bot. This simple pattern provides a way for Amazon Lex bots to converse across a greater number of audiences. 
+
+The additional purpose of this project is to convey best practices on modern serverless design approaches including CD pipeline automation.  
 
 ## Design
 
@@ -13,7 +15,7 @@ The environment setup with the following Cloudformation templates:
 * Identity Stack. Cognito UserPool and a test user. 
     [cognito/cognito-cfn.yaml](cognito/cognito-cfn.yaml)
 * Multilanguage Bot Stack. API Gateway and Lambda function defined in a SAM template. 
-    [MultilanguageBot.yaml](MultilanguageBot.yaml) 
+    [TranslatorBotApi.yaml](TranslatorBotApi.yaml) 
 * Edge Stack. S3 website with CloudFront distribution and Route 53 DNS hostname entry for the site.
     [edge/cloudfront-website.yaml](edge/cloudfront-website.yaml)
 * Pipeline Stack. Deploys website and multilanguage bot stack.
@@ -89,7 +91,7 @@ Other Cognito notes here: [cognito/README.md](cognito/README.md)
 
 ### 3. Create Multilanguage API stack
 
-SAM template: [MultilanguageBot.yaml](MultilanguageBot.yaml)
+SAM template: [TranslatorBotApi.yaml](TranslatorBotApi.yaml)
 
 Creates the main translator API stack. The Bot stack creates a BotTranslator Lambda function and API Gateway endpoint. IAM permissions are setup to permit calls to Translate and Lex. It has a cross-stack resource dependency on the Cognito stack.
 
@@ -102,7 +104,7 @@ Package SAM template into a CloudFormation template, then Deploy the stack.
 COGNITO_STACK_NAME=CHANGE_ME
 S3_BUCKET=CHANGE_ME
 
-sam package --template-file MultilanguageBot.yaml --s3-bucket $S3_BUCKET --output-template-file ./samOutput.yaml.gitignore
+sam package --template-file TranslatorBotApi.yaml --s3-bucket $S3_BUCKET --output-template-file ./samOutput.yaml.gitignore
 
 aws cloudformation deploy --capabilities CAPABILITY_IAM --template-file ./samOutput.yaml.gitignore --parameter-overrides "CognitoStackName=$COGNITO_STACK_NAME" --stack-name $REPLACE_ME
 ```
@@ -132,38 +134,21 @@ Deployment of actual web content is left to the pipeline, see next.
 
 ### 5. Create Pipeline stack
 
-Deploys S3 website content and Lambda API updates from GitHub source.
-
+Deploys Lambda API stack and S3 website content from GitHub source.
 CloudFormation template[pipeline/pipeline.yaml](pipeline/pipeline.yaml)
 
-#### 5.1. Setup parameters.
+#### 5.1. Create secret.
 
-Save sensitive data SSM and SecretsManager. Its a best-practice to externalize environment-specific parameters and secrets away from the code repo.
+The pipeline requires a connection to the Github repo storing the source. 
+This parameter is from the GitHubToken, this is the OAuth token. You will need to:
+1. Fork this Github repo 
+2. Generate a Github OAuth token. [https://github.com/settings/tokens](https://github.com/settings/tokens) 
 
-#### 5.1. Setup parameters.
+Save sensitive data such as the GitHubToken in SecretsManager. This way the token string does not appear in plaintext in a CloudFormation stack parameter. Generally, its a best-practice to externalize environment-specific parameters and secrets away from the code repo.
 
-Save sensitive data SSM and SecretsManager. Its a best-practice to externalize environment-specific parameters and secrets away from the code repo.
-
-TODO: auto generate test secrets within CloudFormation.
 
 ```
-aws ssm put-parameter --name "bot.multilanguage.TestUserName" \
-          --description "Test user name" \
-          --value user01 \
-          --type String
-
-aws ssm put-parameter --name "bot.multilanguage.TestUserCred" \
-          --description "Test user cred" \
-          --value $REPLACE_ME \
-          --type String
-
-aws ssm get-parameter --name "bot.multilanguage.TestUserName"  --with-decryption
-
 aws secretsmanager create-secret --name bot.multilanguage.GitHubToken \
-    --description "Test user cred" \
-    --secret-string $REPLACE_ME
-
-aws secretsmanager create-secret --name bot.multilanguage.TestUserCred \
     --description "Test user cred" \
     --secret-string $REPLACE_ME
 
@@ -172,6 +157,7 @@ aws secretsmanager get-secret-value --secret-id "bot.multilanguage.GitHubToken"
 
 #### 5.2. Deploy the pipeline stack.
 
+Upon successful stack creation, the pipeline should connect to your Github repo and start a pipeline build and deploy.
 CloudFormation template[pipeline/pipeline.yaml]()
 ```
 aws cloudformation deploy --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM --template-file ./pipeline.yaml \
@@ -187,31 +173,10 @@ aws cloudformation deploy --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM --t
 --stack-name CHANGEME
 ```
 
-#### Parameter Store
+#### Verify the user experience! 
 
-Use SSM Parameter Store to save configuration and secret strings. Its a good idea to externalize sensitive values away from your source code repository. Setup parameters for:
+Browse to the website endpoint.
 
-* Github token to authorize your source repo. This is the OAuth token, see https://github.com/settings/tokens 
-* Test user and creds.
-
-```
-aws ssm put-parameter --name "bot.multilanguage.GitHubToken" \
-          --description "Github OAuth Token" \
-          --value CHANGE_ME \
-          --type SecureString
-
-aws ssm get-parameter --name "bot.multilanguage.GitHubToken"  --with-decryption
-
-aws ssm put-parameter --name "bot.multilanguage.TestUserName" \
-          --description "Test user name" \
-          --value user01 \
-          --type String
-
-aws ssm put-parameter --name "bot.multilanguage.TestUserCred" \
-          --description "Test user cred" \
-          --value CHANGE_ME \
-          --type SecureString
-```
 
 ### 6. Setup Monitoring (TODO)
 
@@ -250,6 +215,8 @@ E.g.
 
 ### Example confirmation of order :
 
+Current version does not translate order confirmation into local language. 
+
 ```
 {
   "confirmation": {
@@ -275,22 +242,26 @@ E.g.
   }
 }
 ```
+
 ## Cleanup Steps
 
 Delete the stacks.
 
-## Known Limitations
 
-* Deletion of Pipeline stack fails when unable to delete a non-empty S3 bucket containing pipeline artifacts from previous deployments.
+## Known Issues
 
-* The solution is a nïeve implementation that seems to work for the majority of cases similar to the example Lex bots. Perhaps someone with a linguistics background might be able to identify potential edge cases of semantic mistranslations. Perhaps some Mechanical Turk testing could verify the quality of the bot by human native speaker testers.
+* Deletion of pipeline stack fails when unable to delete a non-empty S3 bucket e.g. pipeline artifacts from previous deployments.
 
-### Backlog features:
+
+### Backlog:
 
 1. Top-level Cloudformation stack creating nested stacks
 2. Monitoring stack
-3. Canary tests, multilanguage
-4. Integration tests, multilanguage
+3. Multilanguage Canary tests
+4. Multilanguage Integration tests
+5. Pipeline rollback.
+6. Pipeline support for configurable number of API stages 
+
 
 ## Contributing
  
