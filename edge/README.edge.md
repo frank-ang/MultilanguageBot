@@ -3,10 +3,11 @@
 
 ```
 aws cloudformation deploy --capabilities CAPABILITY_IAM \
---template-file ./cloudfront-website.yaml  \
+--template-file ./edge-site.yaml  \
 --parameter-overrides "DomainName=$REPLACE_ME" \
 --parameter-overrides "FullDomainName=$REPLACE_ME" \
 --parameter-overrides "AcmCertificateArn=$REPLACE_ME" \
+--parameter-overrides "BotApiEndpoint=$REPLACE_ME" \
 --stack-name $REPLACE_ME
 ```
 

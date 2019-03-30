@@ -53,8 +53,8 @@ Resources:
     - WebsiteBucket
     Properties:
       # TODO: short TTL for debugging
-      #DefaultCacheBehavior:
-      #  DefaultTTL: 15
+      CacheBehavior:
+        DefaultTTL: 15
       DistributionConfig:
         Comment: Bot Website
         Origins:
