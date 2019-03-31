@@ -1,19 +1,47 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: Multilanguage Bot top level stack
 
+Metadata:
+  AWS::CloudFormation::Interface: 
+    ParameterGroups: 
+      -
+        Label:
+          default: "Cognito stack"
+        Parameters:
+          - TestUserEmail
+      -
+        Label:
+          default: "Edge Stack"
+        Parameters:
+          - DomainName
+          - FullDomainName
+          - AcmCertificateArn
+          - BotApiEndpoint
+      -
+        Label:
+          default: "Pipeline Stack"
+        Parameters:
+          - GitHubRepo
+          - GitHubUser
+          - GitHubBranch
+
 Parameters: 
 
+  # Cognito params
   TestUserEmail:
     Description: Test email address for activation of the Cognito test user,. 
       Its for the demo web app. A temp password is sent to this email for user confirmation.
     Type: String
+
+  # Edge website parameters
   DomainName:
-    Description: DNS name of an existing Amazon Route 53 hosted zone.
+    Description: Domain name of your existing Amazon Route53 hosted zone. E.g. "example.com".
     Type: String   
     AllowedPattern: (?!-)[a-zA-Z0-9-.]{1,63}(?<!-)
-    ConstraintDescription: must be a valid DNS zone name.
+    ConstraintDescription: must be a valid Route53 hosted zone within your account.
   FullDomainName:
-    Description: Full domain name of the bot website.
+    Description: Desired DNS endpoint name for the bot endpoint.
+        This creates a Route53 A Record within the DNS zone. E.g. "flowers.example.com"
     Type: String
     AllowedPattern: (?!-)[a-zA-Z0-9-.]{1,63}(?<!-)
     ConstraintDescription: must be a valid DNS name for the website.
@@ -22,9 +50,33 @@ Parameters:
     Type: String
     AllowedPattern: "arn:aws:acm:.*"
   BotApiEndpoint:
-    Description: Bot API regional endpoint.
+    # now, we won't know where the endpoint is in advance, 
+    # until the pipeline deploys the Bot SAM.
+    # Use a dummy origin as a temporary placeholder.
+    # TODO: investigate updating this stack parameter from pipeline CodeBuild
+    Description: Bot API regional endpoint. E.g. ".*execute-api.*amazonaws.com/Prod/MultilanguageBot"
+    Default: "https://www.demolab.host/"
     Type: String
-    AllowedPattern: ".*execute-api.*amazonaws.com.*"
+
+   # Pipeline parameters
+  GitHubRepo:
+    Description: Name of your forked Github repo for this project. E.g. "MultilanguageBot"
+    Type: String
+  GitHubUser:
+    Description: Your Github username. 
+        The Pipeline will connect using the OAuth token, which you should have stored in SecretsManager.
+    Type: String
+  GitHubBranch:
+    Type: String
+    Default: 'master'
+  #WebsiteBucketDEPRECATED: # read from edge stack
+  #IdentityPoolIdDEPRECATED: # read from edge stack
+  #UserPoolIdDEPRECATED: # read from edge stack
+  #UserPoolClientIDDEPRECATED: # read from edge stack
+  #ApiUrlDEPRECATED: # contstruct this from ${FullDomainName}/Prod/Multilanguage
+  #BotApiStackNameDEPRECATED: # construct stack name from ${StackName}Bot
+  #CognitoStackNameDEPRECATED: # read from cognito stack
+  #FrontDistributionDEPRECTATED: # read from distribution
 
 Resources:
 
@@ -32,20 +84,20 @@ Resources:
     Type: AWS::CloudFormation::Stack
     Properties:
       TemplateURL: https://s3.amazonaws.com/multilanguage-bot/cognito/cognito-cfn.yaml
+      TimeoutInMinutes: 3
       Parameters:
         TestUserEmail: !Ref TestUserEmail
-      TimeoutInMinutes: 3
 
   Edge:
     Type: AWS::CloudFormation::Stack
     Properties:
       TemplateURL: https://s3.amazonaws.com/multilanguage-bot/edge/edge-site.yaml
+      TimeoutInMinutes: 30 # CloudFront distribution creation time, expect >15 mins.
       Parameters:
         DomainName: !Ref DomainName
         FullDomainName: !Ref FullDomainName
         AcmCertificateArn: !Ref AcmCertificateArn
         BotApiEndpoint: !Ref BotApiEndpoint
-      # TimeoutInMinutes: 15
 
 Outputs:
   UserPoolId:

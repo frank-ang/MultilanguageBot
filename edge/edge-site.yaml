@@ -20,8 +20,7 @@ Parameters:
     AllowedPattern: "arn:aws:acm:.*"
   BotApiEndpoint:
     Type: String
-    Description: Bot API regional endpoint.
-    AllowedPattern: ".*execute-api.*amazonaws.com.*"
+    Description: Bot API regional endpoint, e.g. ".*execute-api.*amazonaws.com/Prod/MultilanguageBot"
 
 Resources:
 
@@ -81,7 +80,8 @@ Resources:
         # Define behaviours of how we cache responses
         CacheBehaviors:
         - TargetOriginId: myAPIOrigin
-          PathPattern: !Select [1, !Split ["amazonaws.com", !Ref BotApiEndpoint]]
+          PathPattern: '/Test*' # TODO hardcoded REPLACE 
+          # PathPattern: !Select [1, !Split ["amazonaws.com", !Ref BotApiEndpoint]]
           AllowedMethods:
           - HEAD
           - DELETE
