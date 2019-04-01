@@ -118,7 +118,7 @@ Resources:
         UserPoolClientID: !GetAtt [Cognito, Outputs.UserPoolClientId]
         ApiUrl: !Sub https://${FullDomainName}/Test/MultilanguageBot
         BotApiStackName: !Sub ${AWS::StackName}Bot
-        CognitoStackName: !Ref Cognito
+        CognitoStackName: !GetAtt [Cognito, Outputs.StackName]
         FrontDistribution: !GetAtt [Edge, Outputs.Distribution]
 Outputs:
   UserPoolId:

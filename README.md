@@ -13,13 +13,13 @@ The additional purpose of this project is to convey best practices on modern ser
 The environment setup with the following Cloudformation templates:
 
 * Identity Stack. Cognito UserPool and a test user. 
-    [cognito/cognito-cfn.yaml](cognito/cognito-cfn.yaml)
+    [cloudformation/cognito.yaml](cloudformation/cognito.yaml)
 * Multilanguage Bot Stack. API Gateway and Lambda function defined in a SAM template. 
     [TranslatorBotApi.yaml](TranslatorBotApi.yaml) 
 * Edge Stack. S3 website with CloudFront distribution and Route 53 DNS hostname entry for the site.
-    [edge/cloudfront-website.yaml](edge/cloudfront-website.yaml)
+    [cloudformation/edge-site.yaml](cloudformation/edge-site.yaml)
 * Pipeline Stack. Deploys website and multilanguage bot stack.
-    [pipeline/pipeline.yaml](pipeline/pipeline.yaml)
+    [cloudformation/pipeline.yaml](cloudformation/pipeline.yaml)
 * Metrics: TODO
 
 ### User Experience
@@ -45,7 +45,7 @@ Note that the default OrderFlowers Bot only understands US English. We will now 
 
 ### 2. Create Cognito stack
 
-Cloudformation Template: [cognito/cognito-cfn.yaml](cognito/cognito-cfn.yaml)
+Cloudformation Template: [cognito/cognito-cfn.yaml](cloudformation/cognito.yaml)
 
 A standalone Cognito stack with one test user. 
 
@@ -87,11 +87,9 @@ aws cognito-idp admin-respond-to-auth-challenge --user-pool-id $USER_POOL_ID --c
 
 The design decision to park the identiy resource into its own stack, is because of reusability and separation of concerns. Identity stores should have their own lifecycle separate from the apps they support. You also have the option of replacing this stack with your own existing UserPool, though of course you will need to edit the Bot Cloudformation template file and resolve any broken references. 
 
-Other Cognito notes here: [cognito/README.md](cognito/README.md)
-
 ### 3. Create Multilanguage API stack
 
-SAM template: [TranslatorBotApi.yaml](TranslatorBotApi.yaml)
+SAM template: [MultilanguageApi.yaml](MultilanguageApi.yaml)
 
 Creates the main translator API stack. The Bot stack creates a BotTranslator Lambda function and API Gateway endpoint. IAM permissions are setup to permit calls to Translate and Lex. It has a cross-stack resource dependency on the Cognito stack.
 
@@ -118,7 +116,7 @@ This is the Cloudfront distribution fronting the origins of:
 
 A Route53 record is also created. 
 
-CloudFormation template: [edge/edge-site.yaml](edge/edge-site.yaml)
+CloudFormation template: [cloudformation/edge-site.yaml](cloudformation/edge-site.yaml)
 
 ```
 aws cloudformation deploy --capabilities CAPABILITY_IAM \
@@ -135,7 +133,7 @@ Deployment of actual web content is left to the pipeline, see next.
 ### 5. Create Pipeline stack
 
 Deploys Lambda API stack and S3 website content from GitHub source.
-CloudFormation template[pipeline/pipeline.yaml](pipeline/pipeline.yaml)
+CloudFormation template[pipeline/pipeline.yaml](cloudformation/pipeline.yaml)
 
 #### 5.1. Create secret.
 

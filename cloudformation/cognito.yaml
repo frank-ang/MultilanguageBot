@@ -140,6 +140,9 @@ Resources:
 
 Outputs:
 
+  StackName:
+    Value: !Sub "${AWS::StackName}"
+
   UserPoolId:
     Value: !Ref MyUserPool  
     Export:

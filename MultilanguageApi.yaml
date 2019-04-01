@@ -7,13 +7,10 @@ Parameters:
   CognitoStackName:
     Description: Name of a Cloudformation stack containing the cross-stack Cognito resources for AuthN
     Type: String
-    AllowedPattern : "^[a-zA-Z][a-zA-Z0-9]*$"
-
-  # TODO CloudFront ID.
 
 Resources:
-  # Bot API
-  # FYI, a good reference to setup Cognito Auth per API methods:
+
+  # Bot API Gateway. FYI, a good reference to setup Cognito Auth per API method:
   # https://github.com/awslabs/serverless-application-model/blob/master/examples/2016-10-31/api_cognito_auth/template.yaml
   MultilanguageBotApi:
     Type: AWS::Serverless::Api
@@ -29,6 +26,7 @@ Resources:
               - CognitoUserPoolId:
                   Fn::ImportValue: !Sub ${CognitoStackName}-UserPool
 
+  # Bot Lambda function
   MultilanguageBotFunction:
     Type: AWS::Serverless::Function
     Properties:

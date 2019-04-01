@@ -86,7 +86,7 @@ Resources:
                 RoleArn: !GetAtt [CloudFormationExecutionRole, Arn]
                 StackName: !Sub "${BotApiStackName}"
                 ChangeSetName: !Sub "${BotApiStackName}"
-                TemplatePath: BuildOutput::TranslatorBotApi-deployable.yaml
+                TemplatePath: BuildOutput::MultilanguageApi-deployable.yaml
                 Capabilities: CAPABILITY_IAM
                 ParameterOverrides: !Sub |
                   {
