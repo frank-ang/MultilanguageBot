@@ -6,22 +6,15 @@ version: 0.2
 env:
   variables:
     JS_CONFIG_FILE : "botui/js/config.js"
-    REGION : 'us-east-1'
-    #identity_pool_id : 'us-east-1:b1a31b96-c947-492e-8189-1e14eafa2de1'
-    #user_pool_id: 'us-east-1_QZZnuKKLY'
-    #user_pool_client_id: '3de3267rqnmg9hdd60btcurlni'
-    #api_url: 'https://www.sandbox01.demolab.host/PROD/MultilanguageBot'
-    #test_user_name: 'user01'
-    #test_user_cred: 'Xoyxoz123.'
 
 phases:
   install:
     commands:
       # generate the SAM Template
-      - aws cloudformation package --template-file TranslatorBotApi.yaml --s3-bucket ${ARTIFACT_BUCKET}
-                                   --output-template-file TranslatorBotApi-deployable.yaml
+      - aws cloudformation package --template-file MultilanguageApi.yaml --s3-bucket ${ARTIFACT_BUCKET}
+                                   --output-template-file MultilanguageApi-deployable.yaml
       # Replace parameters in the website javascript config file.
-      - sed -i -e "s/\('region'[[:space:]]*:\).*$/\1 '$REGION',/g" $JS_CONFIG_FILE
+      - sed -i -e "s/\('region'[[:space:]]*:\).*$/\1 '$AWS_DEFAULT_REGION',/g" $JS_CONFIG_FILE
       - sed -i -e "s/\('identity_pool_id'[[:space:]]*:\).*$/\1 '$IDENTITY_POOL_ID',/g" $JS_CONFIG_FILE
       - sed -i -e "s/\('user_pool_id'[[:space:]]*:\).*$/\1 '$USER_POOL_ID',/g" $JS_CONFIG_FILE
       - sed -i -e "s/\('user_pool_client_id'[[:space:]]*:\).*$/\1 '$USER_POOL_CLIENT_ID',/g" $JS_CONFIG_FILE
@@ -39,4 +32,4 @@ phases:
 artifacts:
   type: zip
   files:
-    - TranslatorBotApi-deployable.yaml
+    - MultilanguageApi-deployable.yaml
