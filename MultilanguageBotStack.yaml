@@ -2,13 +2,9 @@ AWSTemplateFormatVersion: '2010-09-09'
 Description: Multilanguage Bot top level stack
 
 Metadata:
+  # Group the parameters for pretty CloudFormation console GUI. 
   AWS::CloudFormation::Interface: 
     ParameterGroups: 
-      -
-        Label:
-          default: "Cognito stack"
-        Parameters:
-          - TestUserEmail
       -
         Label:
           default: "Edge Stack"
@@ -17,6 +13,11 @@ Metadata:
           - FullDomainName
           - AcmCertificateArn
           - BotApiEndpoint
+      -
+        Label:
+          default: "Cognito Stack"
+        Parameters:
+          - TestUserEmail
       -
         Label:
           default: "Pipeline Stack"
@@ -83,7 +84,7 @@ Resources:
   Cognito:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: https://s3.amazonaws.com/multilanguage-bot/cognito/cognito-cfn.yaml
+      TemplateURL: https://s3.amazonaws.com/multilanguage-bot/cloudformation/cognito.yaml
       TimeoutInMinutes: 3
       Parameters:
         TestUserEmail: !Ref TestUserEmail
@@ -91,7 +92,7 @@ Resources:
   Edge:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: https://s3.amazonaws.com/multilanguage-bot/edge/edge-site.yaml
+      TemplateURL: https://s3.amazonaws.com/multilanguage-bot/cloudformation/edge-site.yaml
       TimeoutInMinutes: 30 # CloudFront distribution creation time, expect >15 mins.
       Parameters:
         DomainName: !Ref DomainName
@@ -99,6 +100,26 @@ Resources:
         AcmCertificateArn: !Ref AcmCertificateArn
         BotApiEndpoint: !Ref BotApiEndpoint
 
+  Pipeline:
+    DependsOn:
+      - Cognito
+      - Edge
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: https://s3.amazonaws.com/multilanguage-bot/cloudformation/pipeline.yaml
+      TimeoutInMinutes: 5
+      Parameters:
+        GitHubRepo: !Ref GitHubRepo
+        GitHubBranch: !Ref GitHubBranch
+        GitHubUser: !Ref GitHubUser
+        WebsiteBucket: !GetAtt [Edge, Outputs.BucketName]
+        IdentityPoolId: !GetAtt [Cognito, Outputs.IdentityPoolId]
+        UserPoolId:  !GetAtt [Cognito, Outputs.UserPoolId]
+        UserPoolClientID: !GetAtt [Cognito, Outputs.UserPoolClientId]
+        ApiUrl: !Sub https://${FullDomainName}/Test/MultilanguageBot
+        BotApiStackName: !Sub ${AWS::StackName}Bot
+        CognitoStackName: !Ref Cognito
+        FrontDistribution: !GetAtt [Edge, Outputs.Distribution]
 Outputs:
   UserPoolId:
     Value: !GetAtt [Cognito, Outputs.UserPoolId]
@@ -112,3 +133,5 @@ Outputs:
     Value: !GetAtt [Edge, Outputs.BucketName]
   DomainName:
     Value: !GetAtt [Edge, Outputs.DomainName]
+  DebugCognitoStack:
+    Value: !Ref Cognito

@@ -135,3 +135,6 @@ Outputs:
   DomainName:
     Value: !GetAtt [FrontDistribution, DomainName]
     Description: DomainName of Cloudfront distribution
+  Distribution:
+    Value: !Ref FrontDistribution
+    Description: Cloudfront distribution.

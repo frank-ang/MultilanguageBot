@@ -131,9 +131,9 @@ Resources:
           - Name: API_URL
             Value: !Ref ApiUrl
           - Name: TEST_USER_NAME
-            Value: !Join ['', ['{{resolve:secretsmanager:', !Ref bot.multilanguage.TestUserSecret, ':SecretString:username}}' ]]
+            Value: !Join ['', ['{{resolve:secretsmanager:bot.multilanguage.TestUserSecret:SecretString:username}}' ]]
           - Name: TEST_USER_CRED
-            Value: !Join ['', ['{{resolve:secretsmanager:', !Ref bot.multilanguage.TestUserSecret, ':SecretString:password}}' ]]
+            Value: !Join ['', ['{{resolve:secretsmanager:bot.multilanguage.TestUserSecret:SecretString:password}}' ]]
 
   ## Random generated secret for test user, as JSON.
   TestUserSecret:
