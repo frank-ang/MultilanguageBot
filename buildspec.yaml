@@ -11,7 +11,8 @@ phases:
   install:
     commands:
       - echo "Installing"
-      - apt-get install -y jq
+      - apt update
+      - apt install jq
   pre_build:
     commands:
       - echo "Setting parameters into config file."
@@ -21,7 +22,6 @@ phases:
       - sed -i -e "s/\('user_pool_id'[[:space:]]*:\).*$/\1 '$USER_POOL_ID',/g" $JS_CONFIG_FILE
       - sed -i -e "s/\('user_pool_client_id'[[:space:]]*:\).*$/\1 '$USER_POOL_CLIENT_ID',/g" $JS_CONFIG_FILE
       - sed -i -e "s|\('api_url'[[:space:]]*:\).*$|\1 '$API_URL',|g" $JS_CONFIG_FILE
-      # TODO Ref to Secrets Manager.
       - SECRET_STRING=`aws secretsmanager get-secret-value --secret-id "bot.multilanguage.TestUserSecret" --query "SecretString" | jq 'fromjson'`
       - TEST_USER_NAME=`echo $SECRET_STRING | jq -r '.username'`
       - TEST_USER_CRED=`echo $SECRET_STRING | jq -r '.password'`
