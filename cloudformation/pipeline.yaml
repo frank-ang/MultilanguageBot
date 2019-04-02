@@ -82,6 +82,7 @@ Resources:
                 Version: 1
                 Provider: CloudFormation
               Configuration:
+                ## TODO : Create or Update
                 ActionMode: CHANGE_SET_REPLACE
                 RoleArn: !GetAtt [CloudFormationExecutionRole, Arn]
                 StackName: !Sub "${BotApiStackName}"
@@ -130,10 +131,6 @@ Resources:
             Value: !Ref UserPoolClientID
           - Name: API_URL
             Value: !Ref ApiUrl
-          - Name: TEST_USER_NAME
-            Value: !Join ['', ['{{resolve:secretsmanager:bot.multilanguage.TestUserSecret:SecretString:username}}' ]]
-          - Name: TEST_USER_CRED
-            Value: !Join ['', ['{{resolve:secretsmanager:bot.multilanguage.TestUserSecret:SecretString:password}}' ]]
 
   ## Random generated secret for test user, as JSON.
   TestUserSecret:

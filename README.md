@@ -38,6 +38,12 @@ One alternative approach would be configuring CORS on API Gateway.
 
 ## Installation
 
+### TOOD: Section rewrite using newer nested stack approach.
+1. Create Edge+Cognito+Pipeline stack.
+2. Auto triggers pipeline deployment,
+3. Manually Execute Change Set (TODO: auto-execute changes?)
+4. Manually update CloudFront Origin. (TODO: auto-update CF origin)
+
 ### 1. Create a Lex Bot: 
 Create the default "OrderFlowers" example from the blueprint. [https://docs.aws.amazon.com/lex/latest/dg/gs-bp-create-bot.html](https://docs.aws.amazon.com/lex/latest/dg/gs-bp-create-bot.html)
 

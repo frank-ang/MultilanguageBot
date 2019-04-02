@@ -10,19 +10,30 @@ env:
 phases:
   install:
     commands:
-      # generate the SAM Template
-      - aws cloudformation package --template-file MultilanguageApi.yaml --s3-bucket ${ARTIFACT_BUCKET}
-                                   --output-template-file MultilanguageApi-deployable.yaml
+      - echo "Installing"
+      - yum install jq
+  pre_build:
+    commands:
+      - echo "Setting parameters into config file."
       # Replace parameters in the website javascript config file.
       - sed -i -e "s/\('region'[[:space:]]*:\).*$/\1 '$AWS_DEFAULT_REGION',/g" $JS_CONFIG_FILE
       - sed -i -e "s/\('identity_pool_id'[[:space:]]*:\).*$/\1 '$IDENTITY_POOL_ID',/g" $JS_CONFIG_FILE
       - sed -i -e "s/\('user_pool_id'[[:space:]]*:\).*$/\1 '$USER_POOL_ID',/g" $JS_CONFIG_FILE
       - sed -i -e "s/\('user_pool_client_id'[[:space:]]*:\).*$/\1 '$USER_POOL_CLIENT_ID',/g" $JS_CONFIG_FILE
       - sed -i -e "s|\('api_url'[[:space:]]*:\).*$|\1 '$API_URL',|g" $JS_CONFIG_FILE
+      # TODO Ref to Secrets Manager.
+      - SECRET_STRING=`aws secretsmanager get-secret-value --secret-id "bot.multilanguage.TestUserSecret" --query "SecretString" | jq 'fromjson'`
+      - TEST_USER_NAME=`echo $SECRET_STRING | jq -r '.username'`
+      - TEST_USER_CRED=`echo $SECRET_STRING | jq -r '.password'`
       - sed -i -e "s/\('test_user_name'[[:space:]]*:\).*$/\1 '$TEST_USER_NAME',/g" $JS_CONFIG_FILE
       - sed -i -e "s/\('test_user_cred'[[:space:]]*:\).*$/\1 '$TEST_USER_CRED'/g" $JS_CONFIG_FILE
       - cat $JS_CONFIG_FILE
-
+  build:
+    commands:
+      - echo "Building  build."
+      # generate the SAM Template
+      - aws cloudformation package --template-file MultilanguageApi.yaml --s3-bucket ${ARTIFACT_BUCKET}
+                                   --output-template-file MultilanguageApi-deployable.yaml
       # Deploy the Bot UI web page 
       # 2-stage deployment: website deploy followed by API deploy 
       # Perhaps it would be more sensible to first update the API, followed by the website? 

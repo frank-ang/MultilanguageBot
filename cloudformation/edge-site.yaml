@@ -80,8 +80,8 @@ Resources:
         # Define behaviours of how we cache responses
         CacheBehaviors:
         - TargetOriginId: myAPIOrigin
-          PathPattern: '/Test*' # TODO hardcoded REPLACE 
-          # PathPattern: !Select [1, !Split ["amazonaws.com", !Ref BotApiEndpoint]]
+          PathPattern: !Select [1, !Split ["amazonaws.com", !Ref BotApiEndpoint]]
+              # #'/Test*' # hardcoded, TODO delete.
           AllowedMethods:
           - HEAD
           - DELETE
@@ -93,9 +93,6 @@ Resources:
           ForwardedValues:
             QueryString: "false"
           ViewerProtocolPolicy: https-only
-          MinTTL: "0"
-          MaxTTL: "6"
-          DefaultTTL: "3"
         Origins:
           # Origin from S3 website
           - Id: myS3Origin
@@ -107,6 +104,10 @@ Resources:
             DomainName: !Select [2, !Split ["/", !Ref BotApiEndpoint]]
             CustomOriginConfig:
               OriginProtocolPolicy: https-only
+              OriginSSLProtocols:
+                - TLSv1.2
+                - TLSv1.1
+                - TLSv1
 
   OriginAccessIdentity:
     Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
