@@ -11,7 +11,8 @@ phases:
   install:
     commands:
       - echo "Installing"
-      - yum install jq
+      - which jq
+      - apt-get install -y jq
   pre_build:
     commands:
       - echo "Setting parameters into config file."
