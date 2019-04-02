@@ -11,6 +11,8 @@ phases:
   install:
     commands:
       - echo "Installing"
+      # - add-apt-repository universe
+      - apt-get update
       - apt-get install jq -y || echo "Failed to install and/or update jq."
       # - apt install jq
   pre_build:
