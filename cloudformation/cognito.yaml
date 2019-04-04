@@ -48,7 +48,6 @@ Resources:
     Type: "AWS::Cognito::IdentityPool"
     Properties:
       IdentityPoolName: !Join [ '', !Split ['-',  !Sub '${AWS::StackName}']]
-        # !Sub ${AWS::StackName}Identity
       AllowUnauthenticatedIdentities: true
       CognitoIdentityProviders: 
         - ClientId: !Ref MyUserPoolClient

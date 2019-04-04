@@ -20,7 +20,10 @@ phases:
       - sed -i -e "s/\('user_pool_id'[[:space:]]*:\).*$/\1 '$USER_POOL_ID',/g" $JS_CONFIG_FILE
       - sed -i -e "s/\('user_pool_client_id'[[:space:]]*:\).*$/\1 '$USER_POOL_CLIENT_ID',/g" $JS_CONFIG_FILE
       - sed -i -e "s|\('api_url'[[:space:]]*:\).*$|\1 '$API_URL',|g" $JS_CONFIG_FILE
-      - SECRET_STRING=`aws secretsmanager get-secret-value --secret-id "bot.multilanguage.TestUserSecret" --query "SecretString" | jq 'fromjson'`
+      - # Extract Secrets from key TEST_USER_SECRET_ID
+      - echo "TEST_USER_SECRET_ID=$TEST_USER_SECRET_ID"
+      - SECRET_STRING=`aws secretsmanager get-secret-value --secret-id $TEST_USER_SECRET_ID --query "SecretString" | ./jq 'fromjson'`
+      #- SECRET_STRING=`aws secretsmanager get-secret-value --secret-id "bot.multilanguage.TestUserSecret" --query "SecretString" | ./jq 'fromjson'`
       - TEST_USER_NAME=`echo $SECRET_STRING | ./jq -r '.username'`
       - TEST_USER_CRED=`echo $SECRET_STRING | ./jq -r '.password'`
       - sed -i -e "s/\('test_user_name'[[:space:]]*:\).*$/\1 '$TEST_USER_NAME',/g" $JS_CONFIG_FILE

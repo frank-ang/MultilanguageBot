@@ -24,6 +24,9 @@ Parameters:
     Type: String
   FrontDistribution:
     Type: String
+  TestUserSecretId:
+    Type: String
+    Default: !Join ['', ["bot.multilanguage.TestUserSecret.", !Select [0, !Split ['-',  !Sub '${AWS::StackName}']]]]
 
 Resources:
 
@@ -131,12 +134,16 @@ Resources:
             Value: !Ref UserPoolClientID
           - Name: API_URL
             Value: !Ref ApiUrl
+          - Name: TEST_USER_SECRET_ID
+            Value: !Sub ${TestUserSecretId}
 
   ## Random generated secret for test user, as JSON.
   TestUserSecret:
     Type: 'AWS::SecretsManager::Secret'
     Properties:
-      Name: bot.multilanguage.TestUserSecret
+      # Name: bot.multilanguage.TestUserSecret.
+      Name: !Sub ${TestUserSecretId}
+      # Name: !Join ['', ["bot.multilanguage.TestUserSecret.", !Select [0, !Split ['-',  !Sub '${AWS::StackName}']]]]
       Description: "This secret has a dynamically generated secret password."
       GenerateSecretString:
         SecretStringTemplate: '{"username": "user01"}'
@@ -225,6 +232,10 @@ Resources:
                 Effect: Allow
                 Action:
                   - s3:List*
+              - Resource: arn:aws:secretsmanager:::bot.*
+                Effect: Allow
+                Action:
+                  - secretsmanager:*
 
   CodePipelineServiceRole:
     Type: AWS::IAM::Role
@@ -263,3 +274,5 @@ Resources:
 Outputs:
   PipelineUrl:
     Value: !Sub https://console.aws.amazon.com/codepipeline/home?region=${AWS::Region}#/view/${Pipeline}
+  TestUserSecret:
+    Value: !Ref TestUserSecret

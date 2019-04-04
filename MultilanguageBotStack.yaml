@@ -51,13 +51,15 @@ Parameters:
     Type: String
     AllowedPattern: "arn:aws:acm:.*"
   BotApiEndpoint:
-    # now, we won't know where the endpoint is in advance, 
-    # until the pipeline deploys the Bot SAM.
-    # Use a dummy origin as a temporary placeholder.
-    # TODO: investigate updating this stack parameter from pipeline CodeBuild
+    # At resource creation, we won't know where the endpoint is in advance, 
+    # Since the downstream pipeline will deploy the actual Bot SAM template.
+    # So at this early point, use a dummy origin as a temporary placeholder.
+    # TODO automate the update of the CFN stack parameter by downstream step, 
+    # e.g. Check if default, then set actual endpoint using CodeBuild AWS CLI.
     Description: Bot API regional endpoint. E.g. ".*execute-api.*amazonaws.com/Prod/MultilanguageBot"
-    Default: "https://www.demolab.host/"
+    Default: "www.amazonaws.com/"
     Type: String
+    AllowedPattern: ".*amazonaws.com.*/"
 
    # Pipeline parameters
   GitHubRepo:
@@ -70,14 +72,6 @@ Parameters:
   GitHubBranch:
     Type: String
     Default: 'master'
-  #WebsiteBucketDEPRECATED: # read from edge stack
-  #IdentityPoolIdDEPRECATED: # read from edge stack
-  #UserPoolIdDEPRECATED: # read from edge stack
-  #UserPoolClientIDDEPRECATED: # read from edge stack
-  #ApiUrlDEPRECATED: # contstruct this from ${FullDomainName}/Prod/Multilanguage
-  #BotApiStackNameDEPRECATED: # construct stack name from ${StackName}Bot
-  #CognitoStackNameDEPRECATED: # read from cognito stack
-  #FrontDistributionDEPRECTATED: # read from distribution
 
 Resources:
 
@@ -93,7 +87,7 @@ Resources:
     Type: AWS::CloudFormation::Stack
     Properties:
       TemplateURL: https://s3.amazonaws.com/multilanguage-bot/cloudformation/edge-site.yaml
-      TimeoutInMinutes: 30 # CloudFront distribution creation time, expect >15 mins.
+      TimeoutInMinutes: 45 # CloudFront distribution creation will take time
       Parameters:
         DomainName: !Ref DomainName
         FullDomainName: !Ref FullDomainName
@@ -107,7 +101,7 @@ Resources:
     Type: AWS::CloudFormation::Stack
     Properties:
       TemplateURL: https://s3.amazonaws.com/multilanguage-bot/cloudformation/pipeline.yaml
-      TimeoutInMinutes: 5
+      TimeoutInMinutes: 10
       Parameters:
         GitHubRepo: !Ref GitHubRepo
         GitHubBranch: !Ref GitHubBranch

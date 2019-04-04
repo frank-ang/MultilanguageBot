@@ -20,7 +20,7 @@ Parameters:
     AllowedPattern: "arn:aws:acm:.*"
   BotApiEndpoint:
     Type: String
-    Description: Bot API regional endpoint, e.g. ".*execute-api.*amazonaws.com/Prod/MultilanguageBot"
+    Description: Bot API regional endpoint, e.g. ".*execute-api.*amazonaws.com/Prod/MultilanguageBot", without protocol
 
 Resources:
 
@@ -101,7 +101,7 @@ Resources:
               OriginAccessIdentity: !Sub "origin-access-identity/cloudfront/${OriginAccessIdentity}"
           # Origin from API Gateway
           - Id: myAPIOrigin
-            DomainName: !Select [2, !Split ["/", !Ref BotApiEndpoint]]
+            DomainName: !Select [0, !Split ["/", !Ref BotApiEndpoint]]
             CustomOriginConfig:
               OriginProtocolPolicy: https-only
               OriginSSLProtocols:
@@ -124,7 +124,7 @@ Resources:
       - Name: !Ref 'FullDomainName'
         Type: A
         AliasTarget:
-          # Cloudfront hosted zone is hardcoded. Obscure docs:
+          # Cloudfront hosted zone ID is hardcoded to this value. Obscure docs:
           # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-route53-aliastarget.html 
           HostedZoneId: Z2FDTNDATAQYW2
           DNSName: !GetAtt [FrontDistribution, DomainName]
