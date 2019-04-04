@@ -24,9 +24,6 @@ Parameters:
     Type: String
   FrontDistribution:
     Type: String
-  TestUserSecretId:
-    Type: String
-    Default: !Join ['', ["bot.multilanguage.TestUserSecret.", !Select [0, !Split ['-',  !Sub '${AWS::StackName}']]]]
 
 Resources:
 
@@ -135,15 +132,14 @@ Resources:
           - Name: API_URL
             Value: !Ref ApiUrl
           - Name: TEST_USER_SECRET_ID
-            Value: !Sub ${TestUserSecretId}
+            Value:  !Join ['', ["bot.multilanguage.TestUserSecret.", !Select [0, !Split ['-',  !Sub '${AWS::StackName}']]]]
+
 
   ## Random generated secret for test user, as JSON.
   TestUserSecret:
     Type: 'AWS::SecretsManager::Secret'
     Properties:
-      # Name: bot.multilanguage.TestUserSecret.
-      Name: !Sub ${TestUserSecretId}
-      # Name: !Join ['', ["bot.multilanguage.TestUserSecret.", !Select [0, !Split ['-',  !Sub '${AWS::StackName}']]]]
+      Name: !Join ['', ["bot.multilanguage.TestUserSecret.", !Select [0, !Split ['-',  !Sub '${AWS::StackName}']]]]
       Description: "This secret has a dynamically generated secret password."
       GenerateSecretString:
         SecretStringTemplate: '{"username": "user01"}'
