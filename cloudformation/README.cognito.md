@@ -60,3 +60,28 @@ aws cognito-idp admin-confirm-sign-up \
   --user-pool-id $USER_POOL_ID \
   --username $USERNAME
 ```
+
+
+### Admin create users
+
+```
+# Parameters
+USER_POOL_ID=us-east-1_2W4VMIOMM
+USERNAME=user02
+TEMP_PASSWORD=Temp123.
+
+# does the user exist?
+aws cognito-idp  admin-get-user --user-pool-id $USER_POOL_ID --username $USERNAME | jq -r '.UserStatus'
+# if FORCE_CHANGE_PASSWORD ... do stuff
+USER_STATUS=`aws cognito-idp  admin-get-user --user-pool-id $USER_POOL_ID --username $USERNAME`
+
+
+# Create a user:
+aws cognito-idp admin-create-user --user-pool-id $USER_POOL_ID --username $USERNAME --temporary-password $TEMP_PASSWORD
+
+# Administratively auth as user
+SESSION_KEY=`aws cognito-idp admin-initiate-auth --user-pool-id $USER_POOL_ID --client-id $APP_CLIENT_ID --auth-flow ADMIN_NO_SRP_AUTH --auth-parameters USERNAME=$USERNAME,PASSWORD=$TEMP_PASSWORD | jq -r ".Session"`
+
+aws cognito-idp admin-respond-to-auth-challenge --user-pool-id $USER_POOL_ID --client-id $APP_CLIENT_ID --challenge-name NEW_PASSWORD_REQUIRED --challenge-responses NEW_PASSWORD=$DESIRED_PASSWORD,USERNAME=$USERNAME,userAttributes.name=$USERNAME --session $SESSION_KEY
+
+````

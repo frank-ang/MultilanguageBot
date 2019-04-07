@@ -82,13 +82,13 @@ Resources:
                 Version: 1
                 Provider: CloudFormation
               Configuration:
-                ## TODO : Create or Update
-                ActionMode: CHANGE_SET_REPLACE
+                ActionMode: CREATE_UPDATE
                 RoleArn: !GetAtt [CloudFormationExecutionRole, Arn]
                 StackName: !Sub "${BotApiStackName}"
                 ChangeSetName: !Sub "${BotApiStackName}"
                 TemplatePath: BuildOutput::MultilanguageApi-deployable.yaml
                 Capabilities: CAPABILITY_IAM
+                RoleArn: !GetAtt CloudFormationExecutionRole.Arn
                 ParameterOverrides: !Sub |
                   {
                     "CognitoStackName": "${CognitoStackName}"
@@ -100,7 +100,6 @@ Resources:
   CodeBuildProject:
     DependsOn: 
       - ArtifactBucket
-      - TestUserSecret
     Type: AWS::CodeBuild::Project
  
     Properties:
@@ -133,19 +132,6 @@ Resources:
             Value: !Ref ApiUrl
           - Name: TEST_USER_SECRET_ID
             Value:  !Join ['', ["bot.multilanguage.TestUserSecret.", !Select [0, !Split ['-',  !Sub '${AWS::StackName}']]]]
-
-
-  ## Random generated secret for test user, as JSON.
-  TestUserSecret:
-    Type: 'AWS::SecretsManager::Secret'
-    Properties:
-      Name: !Join ['', ["bot.multilanguage.TestUserSecret.", !Select [0, !Split ['-',  !Sub '${AWS::StackName}']]]]
-      Description: "This secret has a dynamically generated secret password."
-      GenerateSecretString:
-        SecretStringTemplate: '{"username": "user01"}'
-        GenerateStringKey: "password"
-        PasswordLength: 12
-        ExcludeCharacters: '"@/\'
 
   ## IAM Roles ##
 
@@ -270,5 +256,3 @@ Resources:
 Outputs:
   PipelineUrl:
     Value: !Sub https://console.aws.amazon.com/codepipeline/home?region=${AWS::Region}#/view/${Pipeline}
-  TestUserSecret:
-    Value: !Ref TestUserSecret

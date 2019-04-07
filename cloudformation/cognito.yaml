@@ -124,19 +124,6 @@ Resources:
         authenticated: !GetAtt CognitoAuthorizedRole.Arn
         unauthenticated: !GetAtt CognitoUnAuthorizedRole.Arn
 
-  # Create a test user required for the web app demo.
-  MyTestUser:
-    Type: AWS::Cognito::UserPoolUser
-    Properties:
-      Username: user01
-      DesiredDeliveryMediums:
-        - EMAIL
-      UserPoolId:
-        Ref: MyUserPool
-      UserAttributes:
-        - Name: email
-          Value: !Ref TestUserEmail
-
 Outputs:
 
   StackName:

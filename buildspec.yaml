@@ -6,7 +6,15 @@ version: 0.2
 env:
   variables:
     JS_CONFIG_FILE : "botui/js/config.js"
-
+    # other environment variables required from the build project:
+    #  ARTIFACT_BUCKET
+    #  WEBSITE_BUCKET
+    #  REGION
+    #  IDENTITY_POOL_ID
+    #  USER_POOL_ID
+    #  USER_POOL_CLIENT_ID
+    #  API_URL
+    #  TEST_USER_SECRET_ID
 phases:
   install:
     commands:
@@ -14,18 +22,19 @@ phases:
       - curl -qL -o jq https://stedolan.github.io/jq/download/linux64/jq && chmod +x ./jq
   pre_build:
     commands:
+      - # Setup Test User, 
+      - TEST_USER_NAME=user10
+      - TEST_USER_CRED=`date | md5sum | head -c${1:-10}`
+      - echo "Creating Test User $TEST_USER_NAME"
+      - ./create-cognitor-user.sh
+
+      ## Set into config JS
       - echo "Setting parameters into the website config.js file."
       - sed -i -e "s/\('region'[[:space:]]*:\).*$/\1 '$AWS_DEFAULT_REGION',/g" $JS_CONFIG_FILE
       - sed -i -e "s/\('identity_pool_id'[[:space:]]*:\).*$/\1 '$IDENTITY_POOL_ID',/g" $JS_CONFIG_FILE
       - sed -i -e "s/\('user_pool_id'[[:space:]]*:\).*$/\1 '$USER_POOL_ID',/g" $JS_CONFIG_FILE
       - sed -i -e "s/\('user_pool_client_id'[[:space:]]*:\).*$/\1 '$USER_POOL_CLIENT_ID',/g" $JS_CONFIG_FILE
       - sed -i -e "s|\('api_url'[[:space:]]*:\).*$|\1 '$API_URL',|g" $JS_CONFIG_FILE
-      - # Extract Secrets from key TEST_USER_SECRET_ID
-      - echo "TEST_USER_SECRET_ID=$TEST_USER_SECRET_ID"
-      - SECRET_STRING=`aws secretsmanager get-secret-value --secret-id $TEST_USER_SECRET_ID --query "SecretString" | ./jq 'fromjson'`
-      #- SECRET_STRING=`aws secretsmanager get-secret-value --secret-id "bot.multilanguage.TestUserSecret" --query "SecretString" | ./jq 'fromjson'`
-      - TEST_USER_NAME=`echo $SECRET_STRING | ./jq -r '.username'`
-      - TEST_USER_CRED=`echo $SECRET_STRING | ./jq -r '.password'`
       - sed -i -e "s/\('test_user_name'[[:space:]]*:\).*$/\1 '$TEST_USER_NAME',/g" $JS_CONFIG_FILE
       - sed -i -e "s/\('test_user_cred'[[:space:]]*:\).*$/\1 '$TEST_USER_CRED'/g" $JS_CONFIG_FILE
       - cat $JS_CONFIG_FILE
@@ -33,7 +42,7 @@ phases:
     commands:
       - echo "Building  build."
       # generate the SAM Template
-      - aws cloudformation package --template-file MultilanguageApi.yaml --s3-bucket ${ARTIFACT_BUCKET}
+      - aws cloudformation package --template-file cloudformation/MultilanguageApi.yaml --s3-bucket ${ARTIFACT_BUCKET}
                                    --output-template-file MultilanguageApi-deployable.yaml
       # Deploy the Bot UI web page 
       # 2-stage deployment: website deploy followed by API deploy 
