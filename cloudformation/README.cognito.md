@@ -72,9 +72,10 @@ TEMP_PASSWORD=Temp123.
 
 # does the user exist?
 aws cognito-idp  admin-get-user --user-pool-id $USER_POOL_ID --username $USERNAME | jq -r '.UserStatus'
-# if FORCE_CHANGE_PASSWORD ... do stuff
+# does the user exist? 
 USER_STATUS=`aws cognito-idp  admin-get-user --user-pool-id $USER_POOL_ID --username $USERNAME`
 
+# FORCE_CHANGE_PASSWORD ... do stuff
 
 # Create a user:
 aws cognito-idp admin-create-user --user-pool-id $USER_POOL_ID --username $USERNAME --temporary-password $TEMP_PASSWORD

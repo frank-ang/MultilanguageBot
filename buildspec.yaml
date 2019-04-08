@@ -26,7 +26,7 @@ phases:
       - TEST_USER_NAME=user10
       - TEST_USER_CRED=`date | md5sum | head -c${1:-10}`
       - echo "Creating Test User $TEST_USER_NAME"
-      - ./create-cognitor-user.sh
+      - ./create-cognito-user.sh
 
       ## Set into config JS
       - echo "Setting parameters into the website config.js file."
