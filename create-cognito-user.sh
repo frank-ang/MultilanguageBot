@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -ev
 echo "Creating cognito user, checking for required environment variables..."
 # Check for required Environment Variables:
 : "${USER_POOL_ID?USER_POOL_ID needs to be set}"
