@@ -57,13 +57,14 @@ then
 	SECRET_STRING+=$TEST_USER_CRED
 	SECRET_STRING+='"}]'
 	echo "SECRET_STRING=$SECRET_STRING"
-	echo "writing test secret to TEST_USER_SECRET_ID=$TEST_USER_SECRET_ID"
 	SECRET_EXISTS_RC=-1
-	SECRET_EXISTS_RC=`aws secretsmanager describe-secret --secret-id $TEST_USER_SECRET_ID`
+	aws secretsmanager describe-secret --secret-id $TEST_USER_SECRET_ID && SECRET_EXISTS_RC=$? || SECRET_EXISTS_RC=$?
 	if [ $SECRET_EXISTS_RC -eq 0 ]
 	then
+		echo "Updating existing test secret id=$TEST_USER_SECRET_ID"
 		aws secretsmanager update-secret --secret-id $TEST_USER_SECRET_ID --description "Test user cred, updated." --secret-string $SECRET_STRING
  	else
+		echo "Creating new test secret id=$TEST_USER_SECRET_ID"
 		aws secretsmanager create-secret --name $TEST_USER_SECRET_ID --description "Test user cred, created." --secret-string $SECRET_STRING
 	fi
 	echo "Completed setup of Cognito test user=$TEST_USER_NAME"
