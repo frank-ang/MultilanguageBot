@@ -16,32 +16,25 @@ env:
     #  API_URL
     #  TEST_USER_SECRET_ID
 phases:
+
   install:
     commands:
       - echo "Installing jq..."
       - curl -qL -o jq https://stedolan.github.io/jq/download/linux64/jq && chmod +x ./jq
-  pre_build:
-    commands:
-      - # Setup Test User, 
-      - TEST_USER_NAME=user10
-      - TEST_USER_CRED=`date | md5sum | head -c${1:-10}`
-      - echo "Creating Test User $TEST_USER_NAME"
-      - chmod +x ./create-cognito-user.sh
-      - ./create-cognito-user.sh
+      - cp ./botui/js/config.js.template ./botui/js/config.js
 
-      ## Set parameters into config Javascript file for the website demo page.
-      - echo "Setting parameters into the website config.js file."
-      - sed -i -e "s/\('region'[[:space:]]*:\).*$/\1 '$AWS_DEFAULT_REGION',/g" $JS_CONFIG_FILE
-      - sed -i -e "s/\('identity_pool_id'[[:space:]]*:\).*$/\1 '$IDENTITY_POOL_ID',/g" $JS_CONFIG_FILE
-      - sed -i -e "s/\('user_pool_id'[[:space:]]*:\).*$/\1 '$USER_POOL_ID',/g" $JS_CONFIG_FILE
-      - sed -i -e "s/\('user_pool_client_id'[[:space:]]*:\).*$/\1 '$USER_POOL_CLIENT_ID',/g" $JS_CONFIG_FILE
-      - sed -i -e "s|\('api_url'[[:space:]]*:\).*$|\1 '$API_URL',|g" $JS_CONFIG_FILE
-      - sed -i -e "s/\('test_user_name'[[:space:]]*:\).*$/\1 '$TEST_USER_NAME',/g" $JS_CONFIG_FILE
-      - sed -i -e "s/\('test_user_cred'[[:space:]]*:\).*$/\1 '$TEST_USER_CRED'/g" $JS_CONFIG_FILE
-      - cat $JS_CONFIG_FILE
+  pre_build:
+    # First-time: setup Congito test user, if one doesn't exist
+    # And Update Parameters from Javascript file.
+    commands:
+      - TEST_USER_NAME=user10
+      - echo "Creating Test User $TEST_USER_NAME"
+      - chmod +x ./codebuild/setup-test-user-config.sh
+      - ./codebuild/setup-test-user-config.sh
+
   build:
     commands:
-      - echo "Building  build."
+      - echo "Building build."
       # Generate the deployable CloudFormation template from the SAM template
       - aws cloudformation package --template-file cloudformation/MultilanguageApi.yaml --s3-bucket ${ARTIFACT_BUCKET}
                                    --output-template-file MultilanguageApi-deployable.yaml
