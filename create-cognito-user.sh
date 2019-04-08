@@ -1,6 +1,15 @@
 #!/bin/bash
 set -ev
-echo "Creating cognito user, checking for required environment variables..."
+echo "Creating cognito user..."
+
+echo "DEBUG print variables"
+echo "USER_POOL_ID=$USER_POOL_ID"
+echo "USER_POOL_CLIENT_ID=$USER_POOL_CLIENT_ID"
+echo "TEST_USER_SECRET_ID=$TEST_USER_SECRET_ID"
+echo "TEST_USER_NAME=$TEST_USER_NAME"
+echo "TEST_USER_NAME=$TEST_USER_CRED"
+
+echo "Checking for required environment variables...""
 # Check for required Environment Variables:
 : "${USER_POOL_ID?USER_POOL_ID needs to be set}"
 : "${USER_POOL_CLIENT_ID?USER_POOL_CLIENT_ID needs to be set}"

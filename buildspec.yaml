@@ -26,10 +26,10 @@ phases:
       - TEST_USER_NAME=user10
       - TEST_USER_CRED=`date | md5sum | head -c${1:-10}`
       - echo "Creating Test User $TEST_USER_NAME"
-      #- chmod +x ./create-cognito-user.sh
-      #- ./create-cognito-user.sh
-      - chmod +x ./dummy.sh
-      - ./dummy.sh
+      - chmod +x ./create-cognito-user.sh
+      - ./create-cognito-user.sh
+      #- chmod +x ./dummy.sh
+      #- ./dummy.sh
 
       ## Set into config JS
       - echo "Setting parameters into the website config.js file."
