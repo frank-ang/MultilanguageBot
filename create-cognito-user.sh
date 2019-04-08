@@ -17,7 +17,6 @@ echo "Checking for required environment variables..."
 : "${TEST_USER_NAME?TEST_USER_NAME needs to be set}"
 : "${TEST_USER_NAME?TEST_USER_NAME needs to be set}"
 : "${TEST_USER_CRED?TEST_USER_CRED needs to be set}"
-: "${FOOBAR?FOOBAR needs to be set}"
 
 TEST_USER_TEMP_CRED=Temp123.
 # USER_POOL_ID=us-east-1_2W4VMIOMM
