@@ -2,12 +2,12 @@
 set -e
 echo "Creating cognito user..."
 
-echo "DEBUG print variables"
+echo "DEBUG printing variables."
 echo "USER_POOL_ID=$USER_POOL_ID"
 echo "USER_POOL_CLIENT_ID=$USER_POOL_CLIENT_ID"
 echo "TEST_USER_SECRET_ID=$TEST_USER_SECRET_ID"
 echo "TEST_USER_NAME=$TEST_USER_NAME"
-echo "TEST_USER_NAME=$TEST_USER_CRED"
+echo "TEST_USER_CRED=$TEST_USER_CRED"
 
 echo "Checking for required environment variables..."
 # Check for required Environment Variables:
@@ -18,21 +18,24 @@ echo "Checking for required environment variables..."
 : "${TEST_USER_CRED?TEST_USER_CRED needs to be set}"
 
 TEST_USER_TEMP_CRED=Temp123.
-# USER_POOL_ID=us-east-1_2W4VMIOMM
-# USER_POOL_CLIENT_ID=1r11m32pc30uepc04k46qv4n61
-# TEST_USER_SECRET_ID=REMOVE_ME
-# TEST_USER_NAME=user04
-# TEST_USER_CRED=`date | md5sum | head -c${1:-10}`
+#
+#USER_POOL_ID=us-east-1_2W4VMIOMM
+#USER_POOL_CLIENT_ID=1r11m32pc30uepc04k46qv4n61
+#TEST_USER_SECRET_ID=REMOVE_ME
+#TEST_USER_NAME=user11
+#TEST_USER_CRED=`date | md5sum | head -c${1:-10}`
+#
 
 # Check if the test user exists.
 USER_EXISTS_RC=-1
 aws cognito-idp admin-get-user --user-pool-id $USER_POOL_ID --username $TEST_USER_NAME && USER_EXISTS_RC=$? || USER_EXISTS_RC=$?
 echo "USER_EXISTS_RC=$USER_EXISTS_RC"
 
-if [ #USER_EXISTS_RC -ne 0 ]; then
+if [ $USER_EXISTS_RC -ne 0 ]
+then
 
     # 1. Create and Confirm test user.
-    echo "Creating user = $TEST_USER_NAME" | jq -r '.UserStatus'
+    echo "User=$TEST_USER_NAME not found, Creating user..."
     aws cognito-idp admin-create-user --user-pool-id $USER_POOL_ID --username $TEST_USER_NAME --temporary-password $TEST_USER_TEMP_CRED
 	echo "Getting session key administratively as test user"
 	SESSION_KEY=`aws cognito-idp admin-initiate-auth --user-pool-id $USER_POOL_ID --client-id $USER_POOL_CLIENT_ID --auth-flow ADMIN_NO_SRP_AUTH --auth-parameters USERNAME=$TEST_USER_NAME,PASSWORD=$TEST_USER_TEMP_CRED | jq -r ".Session"`
@@ -53,8 +56,11 @@ if [ #USER_EXISTS_RC -ne 0 ]; then
 	aws secretsmanager create-secret --name $TEST_USER_SECRET_ID --description "Test user cred" --secret-string $SECRET_STRING
 
 	echo "completed test user setup"
+
 else
+
 	echo "Cognito user=$TEST_USER_NAME already exists. Skipping user creation."
+
 fi
 
-echo "completed"
+echo "Completed cognito user script"

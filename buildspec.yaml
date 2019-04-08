@@ -28,10 +28,8 @@ phases:
       - echo "Creating Test User $TEST_USER_NAME"
       - chmod +x ./create-cognito-user.sh
       - ./create-cognito-user.sh
-      #- chmod +x ./dummy.sh
-      #- ./dummy.sh
 
-      ## Set into config JS
+      ## Set parameters into config Javascript file for the website demo page.
       - echo "Setting parameters into the website config.js file."
       - sed -i -e "s/\('region'[[:space:]]*:\).*$/\1 '$AWS_DEFAULT_REGION',/g" $JS_CONFIG_FILE
       - sed -i -e "s/\('identity_pool_id'[[:space:]]*:\).*$/\1 '$IDENTITY_POOL_ID',/g" $JS_CONFIG_FILE
@@ -44,11 +42,11 @@ phases:
   build:
     commands:
       - echo "Building  build."
-      # generate the SAM Template
+      # Generate the deployable CloudFormation template from the SAM template
       - aws cloudformation package --template-file cloudformation/MultilanguageApi.yaml --s3-bucket ${ARTIFACT_BUCKET}
                                    --output-template-file MultilanguageApi-deployable.yaml
       # Deploy the Bot UI web page 
-      # 2-stage deployment: website deploy followed by API deploy 
+      # This should actually be a 2 phase deploment activity: Website deploy followed by API deploy 
       # Perhaps it would be more sensible to first update the API, followed by the website? 
       - aws s3 sync --acl public-read --delete ./botui/ s3://${WEBSITE_BUCKET}/botui/
       - aws s3 cp --acl public-read ./botui/favicon.ico s3://${WEBSITE_BUCKET}/favicon.ico
