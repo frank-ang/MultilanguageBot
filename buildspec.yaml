@@ -28,21 +28,23 @@ phases:
     # And Update Parameters from Javascript file.
     commands:
       - TEST_USER_NAME=user10
-      - echo "Creating Test User $TEST_USER_NAME"
+      - echo "Setting up test user"
       - chmod +x ./codebuild/setup-test-user-config.sh
       - ./codebuild/setup-test-user-config.sh
 
   build:
     commands:
-      - echo "Building build."
-      # Generate the deployable CloudFormation template from the SAM template
+      # Generate the API CloudFormation template
+      - echo "Generating CloudFormation template from API SAM template..."
       - aws cloudformation package --template-file cloudformation/MultilanguageApi.yaml --s3-bucket ${ARTIFACT_BUCKET}
                                    --output-template-file MultilanguageApi-deployable.yaml
+ 
       # Deploy the Bot UI web page 
-      # This should actually be a 2 phase deploment activity: Website deploy followed by API deploy 
-      # Perhaps it would be more sensible to first update the API, followed by the website? 
+      - echo "Deploying S3 website..."
       - aws s3 sync --acl public-read --delete ./botui/ s3://${WEBSITE_BUCKET}/botui/
       - aws s3 cp --acl public-read ./botui/favicon.ico s3://${WEBSITE_BUCKET}/favicon.ico
+      # TODO makes better sense to separate into 2-phase deploment activities: 
+      # Website deploy followed by API deploy, or vise versa? 
 
 artifacts:
   type: zip
