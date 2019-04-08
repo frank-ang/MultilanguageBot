@@ -214,7 +214,7 @@ Resources:
                 Effect: Allow
                 Action:
                   - s3:List*
-              - Resource: arn:aws:secretsmanager:::bot.*
+              - Resource: arn:aws:secretsmanager:*:*:secret:bot.*
                 Effect: Allow
                 Action:
                   - secretsmanager:*

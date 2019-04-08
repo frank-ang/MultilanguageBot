@@ -58,8 +58,14 @@ then
 	SECRET_STRING+='"}]'
 	echo "SECRET_STRING=$SECRET_STRING"
 	echo "writing test secret to TEST_USER_SECRET_ID=$TEST_USER_SECRET_ID"
-	aws secretsmanager create-secret --name $TEST_USER_SECRET_ID --description "Test user cred" --secret-string $SECRET_STRING
-
+	SECRET_EXISTS_RC=-1
+	SECRET_EXISTS_RC=`aws secretsmanager describe-secret --secret-id $TEST_USER_SECRET_ID`
+	if [ $SECRET_EXISTS_RC -eq 0 ]
+	then
+		aws secretsmanager update-secret --secret-id $TEST_USER_SECRET_ID --description "Test user cred, updated." --secret-string $SECRET_STRING
+ 	else
+		aws secretsmanager create-secret --name $TEST_USER_SECRET_ID --description "Test user cred, created." --secret-string $SECRET_STRING
+	fi
 	echo "Completed setup of Cognito test user=$TEST_USER_NAME"
 
 else
@@ -71,13 +77,11 @@ else
 
 fi
 
-echo "debug: Test user cred=$TEST_USER_CRED" 
-
 echo "Verifying authentication as the test user to retrieve OAUTH_ID_TOKEN JWT Bearer token" 
 OAUTH_ID_TOKEN=`aws cognito-idp initiate-auth --client-id $USER_POOL_CLIENT_ID --auth-flow USER_PASSWORD_AUTH --auth-parameters USERNAME=$TEST_USER_NAME,PASSWORD=$TEST_USER_CRED | jq -r ".AuthenticationResult.IdToken"`
 
+# Update website Javascript config
 echo "Setting parameters into the website config.js file, at: $JS_CONFIG_FILE"
-
 sed -i -e "s/\('region'[[:space:]]*:\).*$/\1 '$AWS_DEFAULT_REGION',/g" $JS_CONFIG_FILE
 sed -i -e "s/\('identity_pool_id'[[:space:]]*:\).*$/\1 '$IDENTITY_POOL_ID',/g" $JS_CONFIG_FILE
 sed -i -e "s/\('user_pool_id'[[:space:]]*:\).*$/\1 '$USER_POOL_ID',/g" $JS_CONFIG_FILE
