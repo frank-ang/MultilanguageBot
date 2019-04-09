@@ -32,7 +32,7 @@ Resources:
     Properties:
       Handler: lex/botTranslator.lambda_handler
       Runtime: python3.6
-      CodeUri: ./
+      CodeUri: ../
       Events:  
         MultilanguageBotApi:
           Type: Api

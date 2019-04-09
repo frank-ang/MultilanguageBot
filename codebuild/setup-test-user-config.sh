@@ -1,17 +1,8 @@
 #!/bin/bash
 # 
-# Setup Cognito test user, with cred set in SecretsManager 
+# Setup Cognito test user, set creds into SecretsManager, update Website Javascript config file.
 #
 set -e
-echo "### Setting up test cognito user, creds, and website config file. ###"
-
-#echo "DEBUG printing variables..."
-#echo "IDENTITY_POOL_ID=$IDENTITY_POOL_ID"
-#echo "USER_POOL_ID=$USER_POOL_ID"
-#echo "USER_POOL_CLIENT_ID=$USER_POOL_CLIENT_ID"
-#echo "API_URL=$API_URL"
-#echo "TEST_USER_SECRET_ID=$TEST_USER_SECRET_ID"
-#echo "TEST_USER_NAME=$TEST_USER_NAME"
 
 echo "Checking for required environment variables..."
 : "${IDENTITY_POOL_ID?IDENTITY_POOL_ID needs to be set}"

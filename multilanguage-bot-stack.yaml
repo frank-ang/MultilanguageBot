@@ -57,7 +57,8 @@ Parameters:
     # TODO automate the update of the CFN stack parameter by downstream step, 
     # e.g. Check if default, then set actual endpoint using CodeBuild AWS CLI.
     Description: Bot API regional endpoint. E.g. ".*execute-api.*amazonaws.com/Prod/MultilanguageBot"
-    Default: "www.amazonaws.com/"
+    # PLEASE update with the actual API endpoint, once the 1st pipeline deployment completes.
+    Default: "www.amazonaws.com/" 
     Type: String
     AllowedPattern: ".*amazonaws.com.*/"
 

@@ -4,11 +4,11 @@ version: 0.2
 # Requires environment variables to be defined, such as ARTIFACT_BUCKET, WEBSITE_BUCKET, etc.
 
 env:
+
   variables:
     JS_CONFIG_FILE : "botui/js/config.js"
     TEST_USER_NAME : "user10"
-
-    # other environment variables required from the build project:
+    # environment variables required from the build project:
     #  ARTIFACT_BUCKET
     #  WEBSITE_BUCKET
     #  REGION
@@ -17,6 +17,7 @@ env:
     #  USER_POOL_CLIENT_ID
     #  API_URL
     #  TEST_USER_SECRET_ID
+
 phases:
 
   install:
@@ -26,8 +27,6 @@ phases:
       - cp ./botui/js/config.js.template ./botui/js/config.js
 
   pre_build:
-    # First-time: setup Congito test user, if one doesn't exist
-    # And Update Parameters from Javascript file.
     commands:
       - echo "Setting up test user"
       - chmod +x ./codebuild/setup-test-user-config.sh
@@ -35,19 +34,17 @@ phases:
 
   build:
     commands:
-      # Generate the API CloudFormation template
       - echo "Generating CloudFormation template from API SAM template..."
-      - aws cloudformation package --template-file cloudformation/multilanguage-api.yaml --s3-bucket ${ARTIFACT_BUCKET}
+      - aws cloudformation package --template-file ./multilanguage-api.yaml --s3-bucket ${ARTIFACT_BUCKET}
                                    --output-template-file multilanguage-api-deployable.yaml
- 
-      # Deploy the Bot UI web page 
       - echo "Deploying S3 website..."
       - aws s3 sync --acl public-read --delete ./botui/ s3://${WEBSITE_BUCKET}/botui/
       - aws s3 cp --acl public-read ./botui/favicon.ico s3://${WEBSITE_BUCKET}/favicon.ico
-      # TODO makes better sense to separate into 2-phase deploment activities: 
-      # Website deploy followed by API deploy, or vise versa? 
+      # TODO, perhapse makes better sense to separate into 2-phase deploment activities?
+      # Website deploy, followed by API deploy, or vise-versa, or parallel?
 
 artifacts:
+
   type: zip
   files:
     - multilanguage-api-deployable.yaml
