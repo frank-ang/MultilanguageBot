@@ -72,6 +72,7 @@ Resources:
                 - Name: SourceArtifact
               OutputArtifacts:
                 - Name: BuildOutput
+
         - Name: Deploy
           Actions:
             - Name: Deploy
@@ -86,8 +87,10 @@ Resources:
                 RoleArn: !GetAtt [CloudFormationExecutionRole, Arn]
                 StackName: !Sub "${BotApiStackName}"
                 ChangeSetName: !Sub "${BotApiStackName}"
-                TemplatePath: BuildOutput::MultilanguageApi-deployable.yaml
-                Capabilities: CAPABILITY_IAM
+                TemplatePath: BuildOutput::multilanguage-api-deployable.yaml
+                Capabilities:
+                  - CAPABILITY_IAM
+                  - CAPABILITY_AUTO_EXPAND
                 RoleArn: !GetAtt CloudFormationExecutionRole.Arn
                 ParameterOverrides: !Sub |
                   {
@@ -95,6 +98,8 @@ Resources:
                   }
               InputArtifacts:
                 - Name: BuildOutput
+
+        # TODO add Blockers: section
 
   ## Code Build. ##
   CodeBuildProject:

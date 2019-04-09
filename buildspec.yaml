@@ -37,8 +37,8 @@ phases:
     commands:
       # Generate the API CloudFormation template
       - echo "Generating CloudFormation template from API SAM template..."
-      - aws cloudformation package --template-file cloudformation/MultilanguageApi.yaml --s3-bucket ${ARTIFACT_BUCKET}
-                                   --output-template-file MultilanguageApi-deployable.yaml
+      - aws cloudformation package --template-file cloudformation/multilanguage-api.yaml --s3-bucket ${ARTIFACT_BUCKET}
+                                   --output-template-file multilanguage-api-deployable.yaml
  
       # Deploy the Bot UI web page 
       - echo "Deploying S3 website..."
@@ -50,4 +50,4 @@ phases:
 artifacts:
   type: zip
   files:
-    - MultilanguageApi-deployable.yaml
+    - multilanguage-api-deployable.yaml
