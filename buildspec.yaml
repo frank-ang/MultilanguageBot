@@ -35,7 +35,7 @@ phases:
   build:
     commands:
       - echo "Generating CloudFormation template from API SAM template..."
-      - aws cloudformation package --template-file ./multilanguage-api.yaml --s3-bucket ${ARTIFACT_BUCKET}
+      - aws cloudformation package --template-file cloudformation/multilanguage-api.yaml --s3-bucket ${ARTIFACT_BUCKET}
                                    --output-template-file multilanguage-api-deployable.yaml
       - echo "Deploying S3 website..."
       - aws s3 sync --acl public-read --delete ./botui/ s3://${WEBSITE_BUCKET}/botui/
