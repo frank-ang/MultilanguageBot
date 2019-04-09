@@ -88,9 +88,7 @@ Resources:
                 StackName: !Sub "${BotApiStackName}"
                 ChangeSetName: !Sub "${BotApiStackName}"
                 TemplatePath: BuildOutput::multilanguage-api-deployable.yaml
-                Capabilities:
-                  - CAPABILITY_IAM
-                  - CAPABILITY_AUTO_EXPAND
+                Capabilities: CAPABILITY_IAM,CAPABILITY_AUTO_EXPAND
                 RoleArn: !GetAtt CloudFormationExecutionRole.Arn
                 ParameterOverrides: !Sub |
                   {
@@ -223,11 +221,15 @@ Resources:
                 Effect: Allow
                 Action:
                   - secretsmanager:*
-              - Resource: "arn:aws:cognito-idp:*:*:userpool/*"
-                # TODO replace with actual test userpool arn
+              - Resource: "*"
+                # !Sub "arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/${UserPoolId}"
                 Effect: Allow
                 Action:
                   - cognito-idp:*
+              - Resource: "*"
+                Effect: Allow
+                Action:
+                  - cognito-identity:*
 
   CodePipelineServiceRole:
     Type: AWS::IAM::Role

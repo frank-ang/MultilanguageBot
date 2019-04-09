@@ -1,10 +1,10 @@
-# Multilanguage Chatbot
+# Multilanguage Bot DevOps
 
 The Multilanguage Lex Bot example demonstrates a pattern to enable AWS customers to configure multilanguage conversational bot experiences across the 21 languages supported by Amazon Translate, overcoming the current US English monolingual limitation of Amazon Lex. 
 
 The solution deploys a tranlation layer in front of the example Order Flowers Amazon Lex bot. This simple pattern provides a way for Amazon Lex bots to converse across a greater number of audiences. 
 
-The additional purpose of this project is to convey best practices on modern serverless design approaches including CD pipeline automation.  
+The additional purpose of this project is to convey best practices on modern serverless design approaches including API Continual Delivery automation.  
 
 ## Design
 
