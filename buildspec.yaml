@@ -6,6 +6,8 @@ version: 0.2
 env:
   variables:
     JS_CONFIG_FILE : "botui/js/config.js"
+    TEST_USER_NAME : "user10"
+
     # other environment variables required from the build project:
     #  ARTIFACT_BUCKET
     #  WEBSITE_BUCKET
@@ -27,7 +29,6 @@ phases:
     # First-time: setup Congito test user, if one doesn't exist
     # And Update Parameters from Javascript file.
     commands:
-      - TEST_USER_NAME=user10
       - echo "Setting up test user"
       - chmod +x ./codebuild/setup-test-user-config.sh
       - ./codebuild/setup-test-user-config.sh

@@ -3,15 +3,15 @@
 # Setup Cognito test user, with cred set in SecretsManager 
 #
 set -e
-echo "Creating cognito user..."
+echo "### Setting up test cognito user, creds, and website config file. ###"
 
-echo "DEBUG printing variables..."
-echo "IDENTITY_POOL_ID=$IDENTITY_POOL_ID"
-echo "USER_POOL_ID=$USER_POOL_ID"
-echo "USER_POOL_CLIENT_ID=$USER_POOL_CLIENT_ID"
-echo "API_URL=$API_URL"
-echo "TEST_USER_SECRET_ID=$TEST_USER_SECRET_ID"
-echo "TEST_USER_NAME=$TEST_USER_NAME"
+#echo "DEBUG printing variables..."
+#echo "IDENTITY_POOL_ID=$IDENTITY_POOL_ID"
+#echo "USER_POOL_ID=$USER_POOL_ID"
+#echo "USER_POOL_CLIENT_ID=$USER_POOL_CLIENT_ID"
+#echo "API_URL=$API_URL"
+#echo "TEST_USER_SECRET_ID=$TEST_USER_SECRET_ID"
+#echo "TEST_USER_NAME=$TEST_USER_NAME"
 
 echo "Checking for required environment variables..."
 : "${IDENTITY_POOL_ID?IDENTITY_POOL_ID needs to be set}"
@@ -21,8 +21,7 @@ echo "Checking for required environment variables..."
 : "${TEST_USER_SECRET_ID?TEST_USER_SECRET_ID needs to be set}"
 : "${TEST_USER_NAME?TEST_USER_NAME needs to be set}"
 
-
-# Sanity check that the config file exists.
+# Sanity check, the config file should exist.
 if [ ! -f $JS_CONFIG_FILE ]; then
     echo "Confing File not found! Expected at: $JS_CONFIG_FILE"
     exit 255
@@ -31,8 +30,7 @@ fi
 TEST_USER_CRED=`date | md5sum | head -c${1:-10}`
 TEST_USER_TEMP_CRED=Temp123.
 
-# Create the user, if it doesn't exist
-
+# check if the test user already exists
 USER_EXISTS_RC=-1
 aws cognito-idp admin-get-user --user-pool-id $USER_POOL_ID --username $TEST_USER_NAME && USER_EXISTS_RC=$? || USER_EXISTS_RC=$?
 echo "USER_EXISTS_RC=$USER_EXISTS_RC"
@@ -40,7 +38,7 @@ echo "USER_EXISTS_RC=$USER_EXISTS_RC"
 if [ $USER_EXISTS_RC -ne 0 ]
 then
 
-    # Create and Confirm test user.
+    # Create the user, since one doesn't exist
     echo "User=$TEST_USER_NAME not found, Creating user..."
     aws cognito-idp admin-create-user --user-pool-id $USER_POOL_ID --username $TEST_USER_NAME --temporary-password $TEST_USER_TEMP_CRED
 	
@@ -71,7 +69,7 @@ then
 
 else
 
-    # Read the cred from Secrets Manager
+    # User already exists. Read the previously-created cred from Secrets Manager.
 	echo "Cognito test user=$TEST_USER_NAME already exists. Retrieving test creds."
 	TEST_USER_CRED=`aws secretsmanager get-secret-value --secret-id $TEST_USER_SECRET_ID`
 	TEST_USER_CRED=`echo $TEST_USER_CRED | ./jq -r '.SecretString' | ./jq  -r '.[].password | select(length>0)'`
@@ -79,7 +77,7 @@ else
 fi
 
 echo "Verifying authentication as the test user to retrieve OAUTH_ID_TOKEN JWT Bearer token" 
-OAUTH_ID_TOKEN=`aws cognito-idp initiate-auth --client-id $USER_POOL_CLIENT_ID --auth-flow USER_PASSWORD_AUTH --auth-parameters USERNAME=$TEST_USER_NAME,PASSWORD=$TEST_USER_CRED | jq -r ".AuthenticationResult.IdToken"`
+OAUTH_ID_TOKEN=`aws cognito-idp initiate-auth --client-id $USER_POOL_CLIENT_ID --auth-flow USER_PASSWORD_AUTH --auth-parameters USERNAME=$TEST_USER_NAME,PASSWORD=$TEST_USER_CRED | ./jq -r ".AuthenticationResult.IdToken"`
 
 # Update website Javascript config
 echo "Setting parameters into the website config.js file, at: $JS_CONFIG_FILE"
