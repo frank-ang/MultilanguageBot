@@ -9,6 +9,7 @@ import logging
 BOT_NAME = "OrderFlowers"
 BOT_ALIAS = "LATEST"
 
+# Hello! 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
